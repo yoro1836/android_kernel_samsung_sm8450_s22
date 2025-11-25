@@ -1,0 +1,3 @@
+[submodule "kernel_platform/common/KernelSU"]
+	path = kernel_platform/common/KernelSU
+	url = https://github.com/backslashxx/KernelSU.git
