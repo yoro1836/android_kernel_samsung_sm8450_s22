@@ -1,0 +1,52 @@
+name: Kernel Build (S22 Series) 
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest 
+
+    steps:
+    - name: Free up workflow space
+      run: |
+        curl -L -o util_free_space.sh https://raw.githubusercontent.com/apache/arrow/main/ci/scripts/util_free_space.sh
+        chmod +x util_free_space.sh
+        ./util_free_space.sh
+
+    - name: Import Kernel Source
+      uses: actions/checkout@v4   
+      
+    - name: Install Required Package
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential bc bison flex libssl-dev make libncurses5-dev git curl clang lld libelf-dev erofs-utils
+
+    - name: Setting Scripts Permission
+      run: |    
+        chmod +x s22.sh
+        chmod +x env.sh
+        chmod +x build.sh      
+
+    - name: Kernel Build
+      run: |   
+        ./s22.sh
+
+    - name: Compress OUTPUT folder
+      run: |
+        echo "Zipping out directory..."
+        zip -r -q S22_Kernel_Source_OUTPUT.zip ./out
+
+    - name: Upload Artifacts Kernel OUTPUT File
+      uses: actions/upload-artifact@v4
+      with:
+        name: "Fold5_Kernel_Source_OUTPUT"
+        path: S22_Kernel_Source_OUTPUT.zip
+
+    - name: Upload Artifacts Flashable File
+      uses: actions/upload-artifact@v4
+      with:
+        name: "Fold5_Kernel_File"
+        path: |
+          ./Galaxy_S22*_KSUN.tar
+          ./boot.img
