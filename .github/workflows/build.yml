@@ -35,18 +35,17 @@ jobs:
     - name: Compress OUTPUT folder
       run: |
         echo "Zipping out directory..."
-        zip -r -q S22_Kernel_Source_OUTPUT.zip ./out
+        zip -r -q S22x_Kernel_Source_OUTPUT.zip ./out
 
     - name: Upload Artifacts Kernel OUTPUT File
       uses: actions/upload-artifact@v4
       with:
-        name: "Fold5_Kernel_Source_OUTPUT"
-        path: S22_Kernel_Source_OUTPUT.zip
+        name: "S22x_Kernel_Source_OUTPUT"
+        path: S22x_Kernel_Source_OUTPUT.zip
 
     - name: Upload Artifacts Flashable File
       uses: actions/upload-artifact@v4
       with:
-        name: "Fold5_Kernel_File"
+        name: "S22x_Kernel_File"
         path: |
-          ./Galaxy_S22*_KSUN.tar
-          ./boot.img
+          ./Yoro_kernel_S22.zip
