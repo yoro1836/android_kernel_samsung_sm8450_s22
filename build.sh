@@ -91,23 +91,13 @@ export GKI_KERNEL_BUILD_OPTIONS="
     HERMETIC_TOOLCHAIN=0 \
     KMI_SYMBOL_LIST_STRICT_MODE=0 \
     RECOMPILE_KERNEL=1 \
-    ABI_DEFINITION= \
-    BUILD_BOOT_IMG=1 \
-    SKIP_VENDOR_BOOT=1 \
-    MKBOOTIMG_PATH=${ANDROID_BUILD_TOP}/kernel_platform/tools/mkbootimg/mkbootimg.py \
-    KERNEL_BINARY=Image.gz \
-    BOOT_IMAGE_HEADER_VERSION=4 \
-    AVB_SIGN_BOOT_IMG=1 \
-    AVB_BOOT_PARTITION_SIZE=100663296 \
-    AVB_BOOT_KEY=${ANDROID_BUILD_TOP}/kernel_platform/tools/mkbootimg/gki/testdata/testkey_rsa4096.pem \
-    AVB_BOOT_ALGORITHM=SHA256_RSA4096 \
-    AVB_BOOT_PARTITION_NAME=boot  
+    ABI_DEFINITION= 
 "
 
 # MKBOOTIMG Setting
 export MKBOOTIMG_EXTRA_ARGS="
     --os_version 12.0.0 \
-    --os_patch_level 2025-08-00 \
+    --os_patch_level 2025-08-01 \
     --pagesize 4096 \
 "
 
@@ -118,16 +108,16 @@ info "================================================"
 # Import toolchain
 TOOLCHAIN_URL="https://github.com/yoro1836/samsung_sm8450_toolchain/releases/download/clang12/toolchain.tar.gz"
 TOOLCHAIN_FILE=$(basename "$TOOLCHAIN_URL")
-CHECK_DIR="toolchain"
+CHECK_DIR="kernel_platform/prebuilts"
 
 if [ -d "$CHECK_DIR" ]; then
-    info "Directory '$CHECK_DIR' already exists. Skipping downlaod toolchain."
+    info "Directory '$CHECK_DIR' already exists. Skipping download toolchain."
 else
     info "Directory '$CHECK_DIR' not found. Starting download toolchain..."
     if [ ! -f "$TOOLCHAIN_FILE" ]; then
         wget -q --show-progress --progress=dot:giga -O "$TOOLCHAIN_FILE" "$TOOLCHAIN_URL"
     fi
-    tar -xf "$TOOLCHAIN_FILE" -C kernel_platform --strip-components=1 toolchain/prebuilts && rm "$TOOLCHAIN_FILE"
+    tar -xzf "$TOOLCHAIN_FILE" -C kernel_platform && rm "$TOOLCHAIN_FILE"
     info "Complete Download."
 fi
 
