@@ -306,7 +306,7 @@ static __always_inline void __ap_context_hack_core_regs_for_panic(
 	regs->pc = (uintptr_t)__builtin_return_address(2) - AARCH64_INSN_SIZE;
 }
 
-static int __used __sec_arm64_ap_context_on_panic(struct pt_regs *regs)
+int __used __sec_arm64_ap_context_on_panic(struct pt_regs *regs)
 {
 	/* NOTE: x0 MUST BE SAVED before this function is called.
 	 * see, 'sec_arm64_ap_context_on_panic'.

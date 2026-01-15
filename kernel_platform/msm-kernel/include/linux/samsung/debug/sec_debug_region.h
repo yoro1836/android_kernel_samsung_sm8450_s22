@@ -1,6 +1,7 @@
 #ifndef __SEC_DEBUG_REGION_H__
 #define __SEC_DEBUG_REGION_H__
 
+#include <linux/err.h>
 /* crc32 <(echo -n "SEC_DBG_REGION_ROOT_MAGIC") | tr '[a-z]' '[A-Z]' */
 #define SEC_DBG_REGION_ROOT_MAGIC	0xC317F7EF
 /* crc32 <(echo -n "SEC_DBG_REGION_CLIENT_MAGIC") | tr '[a-z]' '[A-Z]' */

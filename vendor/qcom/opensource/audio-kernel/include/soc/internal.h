@@ -1,1 +1,1 @@
-/home/dpi/qb5_8814/workspace/P4_1716/android/kernel_platform/./msm-kernel/drivers/base/regmap/internal.h
+/home/yoro/android_kernel_samsung_sm8450_s22/kernel_platform/./msm-kernel/drivers/base/regmap/internal.h
