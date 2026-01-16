@@ -1,7 +1,6 @@
 [submodule "kernel_platform/common"]
 	path = kernel_platform/common
-	url = /home/yoro/repos/common.git
-	branch = main
+	url = https://github.com/yoro1836/android_kernel_samsung_sm8450
 [submodule "external/AnyKernel3"]
 	path = external/AnyKernel3
 	url = https://github.com/yoro1836/AnyKernel3

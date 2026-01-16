@@ -29,9 +29,8 @@ info "================================================"
 # Cooking Flashable File
 set -x
 
-git clone "https://github.com/yoro1836/AnyKernel3.git"
-cp ./out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist/Image ./AnyKernel3/
-zip ./Yoro_kernel_S22.zip ./AnyKernel/*
+cp ./out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist/Image ./external/AnyKernel3/
+zip ./Yoro_kernel_S22.zip ./external/AnyKernel3/*
 
 set +x
 info "        Complete Cooked Flashable File"
