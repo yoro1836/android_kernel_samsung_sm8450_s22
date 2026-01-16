@@ -21,7 +21,7 @@
 #   2. Custom Edit kernel source (If you dont know Kernel Knowledge, I recommend skip this step)
 #   3. Open the Terminal > Wrtie and Run This command
 #
-#                                          ./s22.sh
+#                                          ./build.sh
 #
 #   4. It takes about 30~50mins... (Scamsung Flagship GKI Kernel Source is very huge)
 #                 ** Required at least 40~50GB in your local PC Storage **
@@ -31,8 +31,52 @@
 #                                 - Yoro1836 (Thank You for GoRhanHee and Ravindu)
 # ===============================================================================================================
 
-# Setting Color Font
-source "./env.sh"
+# --- FROM env.sh ---
+export BLACK='\033[0;30m'
+export RED='\033[1;31m'
+export UNBOLD_GREEN='\033[0;32m'
+export MINT_GREEN='\033[1;92m'
+export YELLOW='\033[0;\033m'
+export BLUE='\033[0;34m'
+export MAGENTA='\033[0;35m'
+export CYAN='\033[0;36m'
+export BLK='\033[30m'
+export GRAY='\033[90m'
+export WHITE='\033[0;37m'
+export BOLD_WHITE='\033[1;37m'
+export LIGHT_YELLOW='\033[1;93m'
+export BOLD='\033[1m'
+export UNDERLINE='\033[4m'
+export RESET='\033[0m'
+
+
+info() {
+    echo -e "${BOLD}${MINT_GREEN}${1}${RESET} ${BOLD}${2}${RESET}"
+}
+
+warn() {
+    echo -e "${BOLD}${RED}${1}${RESET} ${BOLD}${2}${RESET}" 
+}
+# -------------------
+
+# --- FROM s22.sh (Intro) ---
+# OEM Setting (Preliminary variables from s22.sh - kept for consistency if needed, but build.sh overwrites)
+export ANDROID_BUILD_TOP=$(pwd)
+export TARGET_PRODUCT=gki
+export TARGET_BOARD_PLATFORM=gki
+CHIPSET_NAME=waipio
+
+# Introduce Scripts
+info "================================================"
+info " "
+info "          Galaxy S22(Qualcomm) Series Kernel Builder"
+info " "
+info "================================================"
+info "           Import Compiling Script..."
+info "================================================"
+# ---------------------------
+
+# --- FROM build.sh ---
 
 info "              Compiling Scripts"
 info "================================================"
@@ -126,3 +170,23 @@ info "================================================"
 
 # Build kernel
 ( env ${GKI_KERNEL_BUILD_OPTIONS} ${ANDROID_BUILD_TOP}/kernel_platform/build/android/prepare_vendor.sh sec ${TARGET_PRODUCT} || exit 1)
+# --------------------
+
+# --- FROM s22.sh (Post-Processing) ---
+
+# Success Compiling
+info "================================================"
+info "               Success Compiling"
+info "================================================"
+
+# Cooking Flashable File
+set -x
+
+cp ./out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist/Image ./external/AnyKernel3/
+zip ./Yoro_kernel_S22.zip ./external/AnyKernel3/*
+
+set +x
+info "        Complete Cooked Flashable File"
+info "================================================"
+info "             Thank you -@Yoro1836"
+info "================================================"
