@@ -1,6 +1,7 @@
-[submodule "kernel_platform/common/KernelSU"]
-	path = kernel_platform/common/KernelSU
-	url = https://github.com/backslashxx/KernelSU.git
 [submodule "Anykernel3"]
 	path = Anykernel3
 	url = https://github.com/yoro1836/AnyKernel3
+[submodule "kernel_platform/common"]
+	path = kernel_platform/common
+	url = /home/yoro/repos/common.git
+	branch = main
