@@ -83,7 +83,7 @@ info "================================================"
 
 # Import submodules
 set -x
-git submodule init && git submodule update --remote
+git submodule init && git submodule update --remote --force
 set +x
 info "           Success Import Submodule"
 info "================================================"
@@ -135,7 +135,8 @@ export GKI_KERNEL_BUILD_OPTIONS="
     HERMETIC_TOOLCHAIN=0 \
     KMI_SYMBOL_LIST_STRICT_MODE=0 \
     RECOMPILE_KERNEL=1 \
-    ABI_DEFINITION= 
+    ABI_DEFINITION= \
+    SKIP_VENDOR_BOOT=1
 "
 
 # MKBOOTIMG Setting
@@ -183,7 +184,11 @@ info "================================================"
 set -x
 
 cp ./out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist/Image ./external/AnyKernel3/
-zip ./Yoro_kernel_S22.zip ./external/AnyKernel3/*
+cd ./external/AnyKernel3/
+zip -r ./Yoro_kernel_S22.zip ./*
+mv Yoro_kernel_S22.zip ../..
+rm ./Image
+cd -
 
 set +x
 info "        Complete Cooked Flashable File"
