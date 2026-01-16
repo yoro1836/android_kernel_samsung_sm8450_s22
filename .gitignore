@@ -1,0 +1,5 @@
+*.zip
+device/
+exports.txt
+kernel_platform/prebuilts*
+out/
