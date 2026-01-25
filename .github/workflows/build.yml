@@ -32,7 +32,7 @@ jobs:
         if [ "${{ matrix.variant }}" = "ksu" ]; then
           curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
         elif [ "${{ matrix.variant }}" = "ksu-next" ]; then
-          curl -LSs "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/main/kernel/setup.sh" | bash -
+          curl -LSs curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
         fi
 
     - name: Setting Scripts Permission
