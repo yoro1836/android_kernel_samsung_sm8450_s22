@@ -825,7 +825,7 @@ fi
 # Custom Defconfig
     echo "========================================================"
     echo " Merging custom defconfig with .config"
-    (cd ${OUT_DIR} && ${MERGE_CONFIG} -m .config ${ANDROID_BUILD_TOP}/custom_defconfigs/yoro_defconfig)
+    (cd ${OUT_DIR} && ${MERGE_CONFIG} -m .config ${ANDROID_BUILD_TOP}/custom_defconfigs/zerox_defconfig)
     (cd ${OUT_DIR} && make O=${OUT_DIR} ${TOOL_ARGS} olddefconfig)
 
 if [ "${LTO}" = "none" -o "${LTO}" = "thin" -o "${LTO}" = "full" ]; then

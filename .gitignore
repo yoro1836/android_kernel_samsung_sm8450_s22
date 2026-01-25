@@ -1,4 +1,5 @@
 *.zip
+*.tar
 device/
 exports.txt
 kernel_platform/prebuilts*

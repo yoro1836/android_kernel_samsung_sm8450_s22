@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # ===============================================================================================================
 #
@@ -21,7 +22,7 @@
 #   2. Custom Edit kernel source (If you dont know Kernel Knowledge, I recommend skip this step)
 #   3. Open the Terminal > Wrtie and Run This command
 #
-#                                          ./build.sh
+#                                          ./build.sh [ak3|tar|clean|tcclean|update]
 #
 #   4. It takes about 30~50mins... (Scamsung Flagship GKI Kernel Source is very huge)
 #                 ** Required at least 40~50GB in your local PC Storage **
@@ -31,93 +32,231 @@
 #                                 - Yoro1836 (Thank You for GoRhanHee and Ravindu)
 # ===============================================================================================================
 
-# Import submodules
-git submodule init && git submodule update --remote
+# -----------------------------------------------------------------------------
+# Configuration & Setup
+# -----------------------------------------------------------------------------
 
-# DIR Setting
-SCRIPT_DIR="$(dirname $(readlink -fq $0))"
+function setup_env() {
+    echo "Setting up environment..."
+    
+    # Check submodules
+    if [ ! -d "external/Anykernel3" ] && [ ! -d "./kernel_platform/common" ]; then
+        echo "Cloning submodules..."
+        git submodule update --init --recursive
+    fi
 
-# OEM Setting
-BUILD_TARGET=b0q_gbl_openx
-export MODEL=$(echo $BUILD_TARGET | cut -d'_' -f1)
-export PROJECT_NAME=${MODEL}
-export REGION=$(echo $BUILD_TARGET | cut -d'_' -f2)
-export CARRIER=$(echo $BUILD_TARGET | cut -d'_' -f3)
-export TARGET_BUILD_VARIANT=user
+    # DIR Setting
+    SCRIPT_DIR="$(dirname $(readlink -fq $0))"
 
-CHIPSET_NAME=waipio
+    # OEM Setting
+    BUILD_TARGET=b0q_gbl_openx
+    export MODEL=$(echo $BUILD_TARGET | cut -d'_' -f1)
+    export PROJECT_NAME=${MODEL}
+    export REGION=$(echo $BUILD_TARGET | cut -d'_' -f2)
+    export CARRIER=$(echo $BUILD_TARGET | cut -d'_' -f3)
+    export TARGET_BUILD_VARIANT=user
 
-export ANDROID_BUILD_TOP=$(pwd)
-export TARGET_PRODUCT=gki
-export TARGET_BOARD_PLATFORM=gki
+    CHIPSET_NAME=waipio
 
-export ANDROID_PRODUCT_OUT=${ANDROID_BUILD_TOP}/out/target/product/${MODEL}
-export OUT_DIR=${ANDROID_BUILD_TOP}/out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}
-export DIST_DIR=${ANDROID_BUILD_TOP}/out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist
-export MERGE_CONFIG="${ANDROID_BUILD_TOP}/kernel_platform/common/scripts/kconfig/merge_config.sh"
+    export ANDROID_BUILD_TOP=$(pwd)
+    export TARGET_PRODUCT=gki
+    export TARGET_BOARD_PLATFORM=gki
 
-mkdir -p "${ANDROID_BUILD_TOP}/out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist"
+    export ANDROID_PRODUCT_OUT=${ANDROID_BUILD_TOP}/out/target/product/${MODEL}
+    export OUT_DIR=${ANDROID_BUILD_TOP}/out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}
+    export DIST_DIR=${ANDROID_BUILD_TOP}/out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist
+    export MERGE_CONFIG="${ANDROID_BUILD_TOP}/kernel_platform/common/scripts/kconfig/merge_config.sh"
 
-export KBUILD_EXTRA_SYMBOLS=${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/mmrm-driver/Module.symvers
+    mkdir -p "${DIST_DIR}"
 
-export MODNAME=audio_dlkm
+    export KBUILD_EXTRA_SYMBOLS=${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/mmrm-driver/Module.symvers
+    export MODNAME=audio_dlkm
 
-export KBUILD_EXT_MODULES="../vendor/qcom/opensource/datarmnet-ext/wlan \
-    ../vendor/qcom/opensource/datarmnet/core \
-    ../vendor/qcom/opensource/mmrm-driver \
-    ../vendor/qcom/opensource/audio-kernel \
-    ../vendor/qcom/opensource/camera-kernel \
-    ../vendor/qcom/opensource/display-drivers/msm
+    export KBUILD_EXT_MODULES="../vendor/qcom/opensource/datarmnet-ext/wlan \
+        ../vendor/qcom/opensource/datarmnet/core \
+        ../vendor/qcom/opensource/mmrm-driver \
+        ../vendor/qcom/opensource/audio-kernel \
+        ../vendor/qcom/opensource/camera-kernel \
+        ../vendor/qcom/opensource/display-drivers/msm"
+}
+
+function prepare_toolchain() {
+    # MKBOOTIMG Setting
+    export MKBOOTIMG_EXTRA_ARGS="
+        --os_version 12.0.0 \
+        --os_patch_level 2025-08-01 \
+        --pagesize 4096
     "
 
-# Build Setting
-export GKI_KERNEL_BUILD_OPTIONS="
+    # Import Samsung toolchain
+    local TOOLCHAIN_URL="https://github.com/yoro1836/samsung_sm8450_toolchain/releases/download/clang12/toolchain.tar.gz"
+    local TOOLCHAIN_FILE=$(basename "$TOOLCHAIN_URL")
+    local CHECK_DIR="kernel_platform/prebuilts"
+
+    if [ -d "$CHECK_DIR" ]; then
+        echo "Directory '$CHECK_DIR' already exists. Skipping download toolchain."
+    else
+        echo "Directory '$CHECK_DIR' not found. Starting download toolchain..."
+        if [ ! -f "$TOOLCHAIN_FILE" ]; then
+            wget -q --show-progress --progress=dot:giga -O "$TOOLCHAIN_FILE" "$TOOLCHAIN_URL"
+        fi
+        tar -xzf "$TOOLCHAIN_FILE" -C kernel_platform && rm "$TOOLCHAIN_FILE"
+        echo "Complete Download."
+    fi
+}
+
+# -----------------------------------------------------------------------------
+# Build Functions
+# -----------------------------------------------------------------------------
+
+function get_common_build_options() {
+    echo "
     SKIP_MRPROPER=1 \
     LTO=thin \
     HERMETIC_TOOLCHAIN=0 \
     KMI_SYMBOL_LIST_STRICT_MODE=0 \
     RECOMPILE_KERNEL=1 \
     ABI_DEFINITION= \
-    BUILD_BOOT_IMG=1 \
-    MKBOOTIMG_PATH=${ANDROID_BUILD_TOP}/kernel_platform/tools/mkbootimg/mkbootimg.py \
     KERNEL_BINARY=Image \
-    BOOT_IMAGE_HEADER_VERSION=4 \
-    AVB_SIGN_BOOT_IMG=1 \
-    AVB_BOOT_PARTITION_SIZE=100663296 \
-    AVB_BOOT_KEY=${ANDROID_BUILD_TOP}/kernel_platform/tools/mkbootimg/gki/testdata/testkey_rsa4096.pem \
-    AVB_BOOT_ALGORITHM=SHA256_RSA4096 \
-    AVB_BOOT_PARTITION_NAME=boot
-"
+    "
+}
 
-# MKBOOTIMG Setting
-export MKBOOTIMG_EXTRA_ARGS="
-    --os_version 12.0.0 \
-    --os_patch_level 2025-08-01 \
-    --pagesize 4096
-"
+function build_kernel() {
+    local build_type=$1
+    echo "Starting Build for $build_type..."
 
-# Import Samsung toolchain
-TOOLCHAIN_URL="https://github.com/yoro1836/samsung_sm8450_toolchain/releases/download/clang12/toolchain.tar.gz"
-TOOLCHAIN_FILE=$(basename "$TOOLCHAIN_URL")
-CHECK_DIR="kernel_platform/prebuilts"
+    local common_options=$(get_common_build_options)
 
-if [ -d "$CHECK_DIR" ]; then
-    echo "Directory '$CHECK_DIR' already exists. Skipping download toolchain."
-else
-    echo "Directory '$CHECK_DIR' not found. Starting download toolchain..."
-    if [ ! -f "$TOOLCHAIN_FILE" ]; then
-        wget -q --show-progress --progress=dot:giga -O "$TOOLCHAIN_FILE" "$TOOLCHAIN_URL"
+    if [ "$build_type" = "ak3" ]; then
+        # GKI Build for AnyKernel3
+        # Uses direct build/build.sh call
+        export GKI_KERNEL_BUILD_OPTIONS="${common_options} SKIP_VENDOR_BOOT=1"
+        export BUILD_CONFIG=common/build.config.gki.aarch64
+        
+        echo "Building Common Kernel..."
+        (
+            cd kernel_platform
+            env ${GKI_KERNEL_BUILD_OPTIONS} ./build/build.sh
+        ) || { echo "Kernel build failed!"; exit 1; }
+        
+    elif [ "$build_type" = "tar" ]; then
+        # Odin Tar Build
+        # Uses prepare_vendor.sh
+        export GKI_KERNEL_BUILD_OPTIONS="${common_options} \
+            BUILD_BOOT_IMG=1 \
+            MKBOOTIMG_PATH=${ANDROID_BUILD_TOP}/kernel_platform/tools/mkbootimg/mkbootimg.py \
+            BOOT_IMAGE_HEADER_VERSION=4 \
+            AVB_SIGN_BOOT_IMG=1 \
+            AVB_BOOT_PARTITION_SIZE=100663296 \
+            AVB_BOOT_KEY=${ANDROID_BUILD_TOP}/kernel_platform/tools/mkbootimg/gki/testdata/testkey_rsa4096.pem \
+            AVB_BOOT_ALGORITHM=SHA256_RSA4096 \
+            AVB_BOOT_PARTITION_NAME=boot"
+            
+        echo "Building Kernel & Vendor Modules..."
+        ( 
+            env ${GKI_KERNEL_BUILD_OPTIONS} ${ANDROID_BUILD_TOP}/kernel_platform/build/android/prepare_vendor.sh sec ${TARGET_PRODUCT} 
+        ) || { echo "Vendor build failed!"; exit 1; }
     fi
-    tar -xzf "$TOOLCHAIN_FILE" -C kernel_platform && rm "$TOOLCHAIN_FILE"
-    echo "Complete Download."
+}
+
+function package_ak3() {
+    echo "Packaging for AnyKernel3..."
+    local image_path="./out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist/Image"
+    
+    if [ ! -f "$image_path" ]; then
+        echo "Error: Image not found at $image_path"
+        exit 1
+    fi
+
+    cp "$image_path" ./external/AnyKernel3/Image
+    
+    zipname="ZeroX-5.10-$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)"
+
+    cd external/AnyKernel3
+    zip -r ${zipname}.zip *
+    rm Image
+    mv ${zipname}.zip ../../
+    cd - > /dev/null
+    
+    echo "Done! Build Complete."
+}
+
+function package_tar() {
+    echo "Packaging for Odin..."
+    local dist_path="./out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist"
+    
+    if [ ! -f "$dist_path/vendor_boot.img" ] || [ ! -f "$dist_path/boot.img" ]; then
+        echo "Error: boot.img or vendor_boot.img not found in $dist_path"
+        exit 1
+    fi
+
+    cp "$dist_path/vendor_boot.img" ./vendor_boot.img
+    cp "$dist_path/boot.img" ./boot.img
+    
+    tar -cvf Galaxy_S22.tar boot.img vendor_boot.img
+    
+    echo "Done! Build Complete."
+}
+
+# -----------------------------------------------------------------------------
+# Utility Functions
+# -----------------------------------------------------------------------------
+
+function clean_out() {
+    echo "Cleaning out directory..."
+    rm -rf out device || echo "No need to clean out"
+    echo "Cleaned up."
+}
+
+function clean_toolchain() {
+    echo "Cleaning toolchain..."
+    rm -rf kernel_platform/prebuilts* || echo "No need to clean toolchain"
+    echo "Toolchain cleaned up."
+}
+
+function update_repo() {
+    echo "Updating repository..."
+    git pull || true
+    git submodule update --remote || true
+    echo "Updated."
+}
+
+function show_usage() {
+    echo "Usage: $0 [ak3|tar|clean|tcclean|update]"
+    exit 1
+}
+
+# -----------------------------------------------------------------------------
+# Main Execution
+# -----------------------------------------------------------------------------
+
+if [ "$#" -ne 1 ]; then
+    show_usage
 fi
 
-# Cooking Kernel Source & boot.img
-( env ${GKI_KERNEL_BUILD_OPTIONS} ${ANDROID_BUILD_TOP}/kernel_platform/build/android/prepare_vendor.sh sec ${TARGET_PRODUCT} || exit 1)
-
-# Copy vendor_boot.img
-cp ./out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist/vendor_boot.img ./vendor_boot.img
-
-# Cooking Flashable File
-cp ./out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist/boot.img ./boot.img
-tar -cvf Galaxy_S22.tar boot.img vendor_boot.img
+case "$1" in
+    ak3)
+        setup_env
+        prepare_toolchain
+        build_kernel "ak3"
+        package_ak3
+        ;;
+    tar)
+        setup_env
+        prepare_toolchain
+        build_kernel "tar"
+        package_tar
+        ;;
+    clean)
+        clean_out
+        ;;
+    tcclean)
+        clean_toolchain
+        ;;
+    update)
+        update_repo
+        ;;
+    *)
+        show_usage
+        ;;
+esac
