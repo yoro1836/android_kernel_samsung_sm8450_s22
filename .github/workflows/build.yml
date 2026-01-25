@@ -28,6 +28,7 @@ jobs:
 
     - name: Setup KernelSU
       run: |
+        git submodule update --init --recursive
         cd kernel_platform/common
         if [ "${{ matrix.variant }}" = "ksu" ]; then
           curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
