@@ -85,10 +85,11 @@ jobs:
     - name: Notify Build Failure
       if: failure()
       run: |
+        MSG=$(printf "*ZeroX Kernel Release Build Failed!* ❌\n\n*Version*: \`${{ github.event.inputs.version }}\`\n*Variant*: \`${{ matrix.variant }}\`\n*Hash*: \`${{ steps.info.outputs.sha }}\`")
         curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendDocument" \
         -F "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
         -F "document=@build.log" \
-        -F "caption=*ZeroX Kernel Release Build Failed!* ❌ %0A%0A*Version*: \`${{ github.event.inputs.version }}\` %0A*Variant*: \`${{ matrix.variant }}\` %0A*Hash*: \`${{ steps.info.outputs.sha }}\` %0A[Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" \
+        -F "caption=$MSG" \
         -F "parse_mode=Markdown"
 
   release:
@@ -127,5 +128,5 @@ jobs:
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage" \
           -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
           -d "parse_mode=Markdown" \
-          -d "text=*ZeroX Kernel Release Success!* 🚀 %0A%0A*Version*: \`$VER\` %0A*Date*: \`$DATE\` %0A*Hash*: \`$SHA\`" \
+          -d "text=$(printf "*ZeroX Kernel Release Success!* 🚀\n\n*Version*: \`$VER\`\n*Date*: \`$DATE\`\n*Hash*: \`$SHA\`")" \
           -d "reply_markup={\"inline_keyboard\":[[{\"text\":\"KernelSU\",\"url\":\"$BASE/ZeroX-$VER-ksu-$DATE-$SHA.zip\"}],[{\"text\":\"KernelSU Next\",\"url\":\"$BASE/ZeroX-$VER-ksu-next-$DATE-$SHA.zip\"}],[{\"text\":\"Non-KSU\",\"url\":\"$BASE/ZeroX-$VER-non-ksu-$DATE-$SHA.zip\"}]]}"
