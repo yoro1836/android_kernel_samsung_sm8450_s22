@@ -49,10 +49,10 @@ jobs:
         cd kernel_platform/common
         if [ "${{ matrix.variant }}" = "ksu" ]; then
           curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
-          git apply $GITHUB_WORKSPACE/patches/scope_min_manual_hooks_v1.6.patch
+          patch -p1 < $GITHUB_WORKSPACE/patches/manual-hook-v1.6.patch
         elif [ "${{ matrix.variant }}" = "ksu-next" ]; then
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
-          patch -p1 < $GITHUB_WORKSPACE/patches/scope_min_manual_hooks_v1.6.patch
+          patch -p1 < $GITHUB_WORKSPACE/patches/manual-hook-v1.6.patch
         fi
         wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
 
