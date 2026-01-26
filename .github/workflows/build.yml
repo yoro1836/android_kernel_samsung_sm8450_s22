@@ -116,9 +116,12 @@ jobs:
           -d "parse_mode=Markdown" \
           --data-urlencode "text=$MSG"
 
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMediaGroup" \
-          -F "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-          -F "media=[{\"type\":\"document\",\"media\":\"attach://file1\"},{\"type\":\"document\",\"media\":\"attach://file2\"},{\"type\":\"document\",\"media\":\"attach://file3\"}]" \
-          -F "file1=@$KSU_FILE" \
-          -F "file2=@$NEXT_FILE" \
-          -F "file3=@$NON_KSU_FILE"
+          for file in "$KSU_FILE" "$NEXT_FILE" "$NON_KSU_FILE"; do
+            if [ -n "$file" ] && [ -f "$file" ]; then
+              echo "Uploading $(basename "$file")..."
+              curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendDocument" \
+              -F "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+              -F "document=@$file" \
+              -F "parse_mode=Markdown"
+            fi
+          done
