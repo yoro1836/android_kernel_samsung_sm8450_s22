@@ -1,7 +1,11 @@
-name: Kernel Build
+name: Kernel Build & Release
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        required: true
+        default: 'v1.0.0'
 
 jobs:
   build:
@@ -31,12 +35,12 @@ jobs:
 
     - name: Setup KernelSU
       run: |
-        git submodule update --init --recursive
+        git submodule update --init --recursive --remote
         cd kernel_platform/common
         if [ "${{ matrix.variant }}" = "ksu" ]; then
           curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
         elif [ "${{ matrix.variant }}" = "ksu-next" ]; then
-          curl -LSs "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next/kernel/setup.sh" | bash -
+          curl -LSs "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/main/kernel/setup.sh" | bash -
         fi
 
     - name: Get Build Info
@@ -52,15 +56,14 @@ jobs:
         export KBUILD_BUILD_HOST="AkoTheCow"
         export KBUILD_BUILD_TIMESTAMP=$(date)
         export KSU_VARIANT=${{ matrix.variant }}
-        
         chmod +x build.sh
         ./build.sh ak3 2>&1 | tee build.log
 
     - name: Prepare Files
       if: success()
       run: |
-        ZIP_NAME=$(ls ZeroX-5.10*.zip | head -n 1)
-        NEW_NAME="ZeroX-5.10-${{ matrix.variant }}-${{ steps.info.outputs.today }}-${{ steps.info.outputs.sha }}.zip"
+        ZIP_NAME=$(ls ZeroX-5.10*.zip)
+        NEW_NAME="ZeroX-${{ github.event.inputs.version }}-${{ matrix.variant }}-${{ steps.info.outputs.today }}-${{ steps.info.outputs.sha }}.zip"
         mv "$ZIP_NAME" "$NEW_NAME"
         echo "final_name=$NEW_NAME" >> $GITHUB_ENV
 
@@ -74,14 +77,13 @@ jobs:
     - name: Notify Build Failure
       if: failure()
       run: |
-        MSG=$(printf "*ZeroX Kernel Build Failed!* ❌\n\n*Variant*: \`${{ matrix.variant }}\` \n*Hash*: \`${{ steps.info.outputs.sha }}\` \n[Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})")
         curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendDocument" \
         -F "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
         -F "document=@build.log" \
-        -F "parse_mode=Markdown" \
-        -F "caption=$MSG"
+        -F "caption=*ZeroX Kernel Release Build Failed!* ❌ %0A%0A*Version*: \`${{ github.event.inputs.version }}\` %0A*Variant*: \`${{ matrix.variant }}\` %0A*Hash*: \`${{ steps.info.outputs.sha }}\` %0A[Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" \
+        -F "parse_mode=Markdown"
 
-  notify:
+  release:
     needs: build
     runs-on: ubuntu-latest
     if: success()
@@ -89,28 +91,33 @@ jobs:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
-          path: ./downloads
+          path: ./release_files
           merge-multiple: true
 
-      - name: Send Telegram Media Group
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: "ZeroX Kernel ${{ github.event.inputs.version }}"
+          body: |
+            ZeroX Kernel Release ${{ github.event.inputs.version }}
+            - Date: ${{ needs.build.outputs.today }}
+            - Hash: ${{ needs.build.outputs.sha }}
+          files: ./release_files/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Send Telegram Message
         run: |
+          VER="${{ github.event.inputs.version }}"
           DATE="${{ needs.build.outputs.today }}"
           SHA="${{ needs.build.outputs.sha }}"
-          
-          KSU_FILE=$(ls ./downloads/*.zip | grep "\-ksu-" | grep -v "next" | head -n 1)
-          NEXT_FILE=$(ls ./downloads/*.zip | grep "\-ksu-next-" | head -n 1)
-          NON_KSU_FILE=$(ls ./downloads/*.zip | grep "\-non-ksu-" | head -n 1)
-          
-          MSG=$(printf "*ZeroX Kernel Build Success!* ⚡️\n\n*Kernel*: \`5.10\`\n*Date*: \`$DATE\`\n*Hash*: \`$SHA\`")
+          REPO="${{ github.repository }}"
+          BASE="https://github.com/$REPO/releases/download/$VER"
           
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage" \
           -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
           -d "parse_mode=Markdown" \
-          --data-urlencode "text=$MSG"
-
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMediaGroup" \
-          -F "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-          -F "media=[{\"type\":\"document\",\"media\":\"attach://file1\"},{\"type\":\"document\",\"media\":\"attach://file2\"},{\"type\":\"document\",\"media\":\"attach://file3\"}]" \
-          -F "file1=@$KSU_FILE" \
-          -F "file2=@$NEXT_FILE" \
-          -F "file3=@$NON_KSU_FILE"
+          -d "text=*ZeroX Kernel Release Success!* 🚀 %0A%0A*Version*: \`$VER\` %0A*Date*: \`$DATE\` %0A*Hash*: \`$SHA\`" \
+          -d "reply_markup={\"inline_keyboard\":[[{\"text\":\"KernelSU\",\"url\":\"$BASE/ZeroX-$VER-ksu-$DATE-$SHA.zip\"}],[{\"text\":\"KernelSU Next\",\"url\":\"$BASE/ZeroX-$VER-ksu-next-$DATE-$SHA.zip\"}],[{\"text\":\"Non-KSU\",\"url\":\"$BASE/ZeroX-$VER-non-ksu-$DATE-$SHA.zip\"}]]}"
