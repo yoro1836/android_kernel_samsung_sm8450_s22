@@ -1,6 +1,5 @@
 *.zip
 *.tar
-*.patch
 device/
 exports.txt
 kernel_platform/prebuilts*

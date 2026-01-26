@@ -38,19 +38,23 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .ccache
-        key: ${{ runner.os }}-ccache-${{ matrix.variant }}-${{ hashFiles('**/Makefile') }}
+        key: ${{ runner.os }}-ccache-${{ matrix.variant }}-${{ hashFiles('**/Makefile') }}-${{ github.run_id }}
         restore-keys: |
+          ${{ runner.os }}-ccache-${{ matrix.variant }}-${{ hashFiles('**/Makefile') }}-
           ${{ runner.os }}-ccache-${{ matrix.variant }}-
 
-    - name: Setup KernelSU
+    - name: Apply Patches
       run: |
         git submodule update --init --recursive --remote
         cd kernel_platform/common
         if [ "${{ matrix.variant }}" = "ksu" ]; then
           curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
+          git apply $GITHUB_WORKSPACE/patches/scope_min_manual_hooks_v1.6.patch
         elif [ "${{ matrix.variant }}" = "ksu-next" ]; then
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
+          git apply $GITHUB_WORKSPACE/patches/scope_min_manual_hooks_v1.6.patch
         fi
+        wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
 
     - name: Get Build Info
       id: info
