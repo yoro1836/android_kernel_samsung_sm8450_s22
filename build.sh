@@ -61,6 +61,9 @@ function setup_env() {
     export ANDROID_BUILD_TOP=$(pwd)
     export TARGET_PRODUCT=gki
     export TARGET_BOARD_PLATFORM=gki
+    
+    # Kernel Version Customization
+    export LOCALVERSION="-ZeroX${VERSION_SUFFIX}"
 
     export ANDROID_PRODUCT_OUT=${ANDROID_BUILD_TOP}/out/target/product/${MODEL}
     export OUT_DIR=${ANDROID_BUILD_TOP}/out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}
