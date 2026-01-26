@@ -78,6 +78,17 @@ function setup_env() {
         ../vendor/qcom/opensource/audio-kernel \
         ../vendor/qcom/opensource/camera-kernel \
         ../vendor/qcom/opensource/display-drivers/msm"
+
+    # CCACHE Setting
+    if command -v ccache >/dev/null 2>&1; then
+        echo "ccache found! Enabling..."
+        export USE_CCACHE=1
+        export CCACHE_EXEC=$(command -v ccache)
+        export CCACHE_DIR="${ANDROID_BUILD_TOP}/.ccache"
+        mkdir -p "$CCACHE_DIR"
+    else
+        echo "ccache not found. Skipping..."
+    fi
 }
 
 function prepare_toolchain() {
