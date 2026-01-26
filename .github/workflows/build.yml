@@ -13,6 +13,7 @@ jobs:
     outputs:
       today: ${{ steps.info.outputs.today }}
       sha: ${{ steps.info.outputs.sha }}
+      kernel_ver: ${{ steps.info.outputs.kernel_ver }}
 
     steps:
     - name: Free up workflow space
@@ -52,6 +53,10 @@ jobs:
       run: |
         echo "today=$(date +'%y%m%d')" >> $GITHUB_OUTPUT
         echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        VERSION=$(grep "^VERSION =" kernel_platform/common/Makefile | awk '{print $3}')
+        PATCHLEVEL=$(grep "^PATCHLEVEL =" kernel_platform/common/Makefile | awk '{print $3}')
+        SUBLEVEL=$(grep "^SUBLEVEL =" kernel_platform/common/Makefile | awk '{print $3}')
+        echo "kernel_ver=$VERSION.$PATCHLEVEL.$SUBLEVEL" >> $GITHUB_OUTPUT
 
     - name: Kernel Build
       run: |
@@ -110,7 +115,7 @@ jobs:
           NEXT_FILE=$(ls ./downloads/*.zip | grep "\-ksu-next-" | head -n 1)
           NON_KSU_FILE=$(ls ./downloads/*.zip | grep "\-non-ksu-" | head -n 1)
           
-          MSG=$(printf "*ZeroX Kernel Build Success!* ⚡️\n\n*Kernel*: \`5.10\`\n*Date*: \`$DATE\`\n*Hash*: \`$SHA\`")
+          MSG=$(printf "*ZeroX Kernel Build Success!* ⚡️\n\n*Kernel*: \`${{ needs.build.outputs.kernel_ver }}\`\n*Date*: \`$DATE\`\n*Hash*: \`$SHA\`")
           
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage" \
           -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
