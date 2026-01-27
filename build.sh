@@ -40,7 +40,7 @@ function setup_env() {
     echo "Setting up environment..."
     
     # Check submodules
-    if [ ! -d "external/Anykernel3" ] && [ ! -d "./kernel_platform/common" ]; then
+    if [ ! -d "external/Anykernel3" ] || [ ! -d "./kernel_platform/common" ]; then
         echo "Cloning submodules..."
         git submodule update --init --recursive
     fi

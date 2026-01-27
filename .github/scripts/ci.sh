@@ -42,12 +42,12 @@ setup_ksu() {
     # Expects KSU_VARIANT to be set
     log "Applying KernelSU variant: ${KSU_VARIANT}"
     
-    pushd kernel_platform/common > /dev/null
+    pushd kernel_platform/common
     
     if [ "${KSU_VARIANT}" = "ksu" ]; then
         curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
     elif [ "${KSU_VARIANT}" = "ksu-next" ]; then
-        curl -LSs "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next/kernel/setup.sh" | bash -
+        curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
     else
         log "No KernelSU setup needed for ${KSU_VARIANT}"
     fi
