@@ -20,10 +20,6 @@ on:
           - "ksu"
           - "ksu-next"
           - "non-ksu"
-      version:
-        description: "Version Suffix (default: v1.0.0)"
-        required: false
-        default: "v1.0.0"
 
 jobs:
   build:
