@@ -94,22 +94,9 @@ jobs:
         SHA: ${{ steps.info.outputs.sha }}
         VERSION: ${{ inputs.version }}
 
-  notify:
-    needs: build
-    runs-on: ubuntu-latest
-    if: success()
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-
-      - name: Download Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./downloads
-          merge-multiple: true
-
-      - name: Send Telegram Media Group
-        run: .github/scripts/ci.sh notify_success build "${{ needs.build.outputs.kernel_ver }}" "${{ needs.build.outputs.today }}" "${{ needs.build.outputs.sha }}" "" "./downloads"
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    - name: Notify Build Success
+      if: success()
+      run: .github/scripts/ci.sh notify_success build "${{ steps.info.outputs.kernel_ver }}" "${{ steps.info.outputs.today }}" "${{ steps.info.outputs.sha }}" "" "."
+      env:
+        TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

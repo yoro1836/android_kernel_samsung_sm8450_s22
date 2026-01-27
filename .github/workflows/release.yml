@@ -15,11 +15,7 @@ jobs:
       matrix:
         variant: [perf, batt]
         ksu: [ksu, ksu-next, non-ksu]
-    outputs:
-      today: ${{ steps.info.outputs.today }}
-      sha: ${{ steps.info.outputs.sha }}
-      kernel_ver: ${{ steps.info.outputs.kernel_ver }}
-
+    
     steps:
     - name: Free up workflow space
       run: |
@@ -93,37 +89,24 @@ jobs:
         SHA: ${{ steps.info.outputs.sha }}
         VERSION: ${{ github.event.inputs.version }}
 
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: success()
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+    - name: Create Release
+      if: success()
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ github.event.inputs.version }}
+        name: "ZeroX Kernel ${{ github.event.inputs.version }}"
+        body: |
+          ZeroX Kernel Release ${{ github.event.inputs.version }}
+          - Date: ${{ steps.info.outputs.today }}
+          - Hash: ${{ steps.info.outputs.sha }}
+        files: ${{ env.final_name }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      - name: Download Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./release_files
-          merge-multiple: true
-
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event.inputs.version }}
-          name: "ZeroX Kernel ${{ github.event.inputs.version }}"
-          body: |
-            ZeroX Kernel Release ${{ github.event.inputs.version }}
-            - Date: ${{ needs.build.outputs.today }}
-            - Hash: ${{ needs.build.outputs.sha }}
-          files: ./release_files/*.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-
-      - name: Send Telegram Message
-        run: .github/scripts/ci.sh notify_success release "${{ needs.build.outputs.kernel_ver }}" "${{ needs.build.outputs.today }}" "${{ needs.build.outputs.sha }}" "${{ github.event.inputs.version }}"
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
+    - name: Send Telegram Message
+      if: success()
+      run: .github/scripts/ci.sh notify_success release "${{ steps.info.outputs.kernel_ver }}" "${{ steps.info.outputs.today }}" "${{ steps.info.outputs.sha }}" "${{ github.event.inputs.version }}"
+      env:
+        TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
