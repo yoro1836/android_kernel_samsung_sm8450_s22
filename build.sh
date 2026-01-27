@@ -97,8 +97,18 @@ function setup_env() {
         export CCACHE_COMPILERCHECK=content
         export CCACHE_COMPRESS=1
         export CCACHE_MAXSIZE=10G
+        export CCACHE_BASEDIR="${ANDROID_BUILD_TOP}"
         mkdir -p "$CCACHE_DIR"
         ccache -z # Zero stats at start
+
+        # Masquerade clang/gcc to force ccache usage
+        local CACHED_BIN_DIR="${ANDROID_BUILD_TOP}/.ccache/bin"
+        mkdir -p "$CACHED_BIN_DIR"
+        for tool in clang clang++ gcc g++ cc c++; do
+            ln -sf "$CCACHE_EXEC" "${CACHED_BIN_DIR}/${tool}"
+        done
+        export PATH="${CACHED_BIN_DIR}:${PATH}"
+        echo "CCache masquerading enabled in ${CACHED_BIN_DIR}"
     else
         echo "ccache not found. Skipping..."
     fi
