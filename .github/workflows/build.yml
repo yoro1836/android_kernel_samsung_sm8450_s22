@@ -63,7 +63,7 @@ jobs:
       run: |
         export KSU_VARIANT=${{ inputs.ksu }}
         export DEFCONFIG_VARIANT=${{ inputs.variant }}
-        export VERSION_SUFFIX="-ZeroX-${{ inputs.variant }}/ci-${{ steps.info.outputs.sha }}"
+        export VERSION_SUFFIX="/ci-${{ steps.info.outputs.sha }}"
         
         chmod +x build.sh
         ./build.sh ak3 2>&1 | tee build.log
