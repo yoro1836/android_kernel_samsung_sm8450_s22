@@ -156,13 +156,28 @@ notify_success() {
         send_msg "$msg"
     else
         msg=$(printf "*ZeroX Kernel Build Success!* ⚡️\n\n*Kernel*: \`${kernel_ver}\`\n*Date*: \`${date}\`\n*Hash*: \`${sha}\`")
-        send_msg "$msg"
         
         # Upload all zips in downloads/ or current dir
         local search_dir="${5:-.}"
+        local first_file=true
+        local files_found=false
+
         for f in "$search_dir"/*.zip; do
-            [ -e "$f" ] && upload_file "$f"
+            if [ -e "$f" ]; then
+                files_found=true
+                if [ "$first_file" = true ]; then
+                    upload_file "$f" "$msg"
+                    first_file=false
+                else
+                    upload_file "$f"
+                fi
+            fi
         done
+        
+        # If no files found, send just the message
+        if [ "$files_found" = false ]; then
+            send_msg "$msg"
+        fi
     fi
 }
 
@@ -176,8 +191,11 @@ notify_failure() {
         msg=$(printf "*ZeroX Kernel ${type^} Failed!* ❌\n\n*KSU*: \`${KSU_VARIANT}\`\n*Variant*: \`${DEFCONFIG_VARIANT}\` \n*Hash*: \`${SHA}\`")
     fi
     
-    send_msg "$msg"
-    upload_file "build.log" "Build Log"
+    if [ -f "build.log" ]; then
+        upload_file "build.log" "$msg"
+    else
+        send_msg "$msg"
+    fi
 }
 
 # =========================================
