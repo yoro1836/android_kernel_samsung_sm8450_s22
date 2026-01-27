@@ -2,19 +2,33 @@ name: Kernel Build
 
 on:
   workflow_dispatch:
+    inputs:
+      variant:
+        description: "Build Variant"
+        required: true
+        default: "perf"
+        type: choice
+        options:
+          - "perf"
+          - "batt"
+      ksu:
+        description: "KernelSU Variant"
+        required: true
+        default: "ksu"
+        type: choice
+        options:
+          - "ksu"
+          - "ksu-next"
+          - "non-ksu"
+      version:
+        description: "Version Suffix (default: v1.0.0)"
+        required: false
+        default: "v1.0.0"
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        variant: [ksu, ksu-next, non-ksu]
-    outputs:
-      today: ${{ steps.info.outputs.today }}
-      sha: ${{ steps.info.outputs.sha }}
-      kernel_ver: ${{ steps.info.outputs.kernel_ver }}
-
+    
     steps:
     - name: Free up workflow space
       run: |
@@ -26,30 +40,16 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Install Required Packages
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential bc bison flex libssl-dev make libncurses5-dev git curl clang lld libelf-dev erofs-utils unzip ccache
+      run: .github/scripts/ci.sh prepare_env
 
     - name: Setup ccache
       uses: actions/cache@v4
       with:
         path: .ccache
-        key: ${{ runner.os }}-ccache-${{ matrix.variant }}-${{ hashFiles('**/Makefile') }}-${{ github.run_id }}
+        key: ${{ runner.os }}-ccache-${{ inputs.ksu }}-${{ inputs.variant }}-${{ hashFiles('**/Makefile') }}-${{ github.run_id }}
         restore-keys: |
-          ${{ runner.os }}-ccache-${{ matrix.variant }}-${{ hashFiles('**/Makefile') }}-
-          ${{ runner.os }}-ccache-${{ matrix.variant }}-
-
-    - name: Apply Patches
-      run: |
-        git submodule update --init --recursive
-        cd kernel_platform/common
-        if [ "${{ matrix.variant }}" = "ksu" ]; then
-          curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
-        elif [ "${{ matrix.variant }}" = "ksu-next" ]; then
-          curl -LSs "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next/kernel/setup.sh" | bash -
-        fi
-        wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
-        sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/selinux/selinux,baseband_guard/ } }' security/Kconfig
+          ${{ runner.os }}-ccache-${{ inputs.ksu }}-${{ inputs.variant }}-${{ hashFiles('**/Makefile') }}-
+          ${{ runner.os }}-ccache-${{ inputs.ksu }}-${{ inputs.variant }}-
 
     - name: Get Build Info
       id: info
@@ -63,40 +63,40 @@ jobs:
 
     - name: Kernel Build
       run: |
-        sudo timedatectl set-timezone "Asia/Seoul" || export TZ="Asia/Seoul"
-        export KBUILD_BUILD_USER="Yoro1836"
-        export KBUILD_BUILD_HOST="AkoTheCow"
-        export KBUILD_BUILD_TIMESTAMP=$(date)
-        export KSU_VARIANT=${{ matrix.variant }}
-        export VERSION_SUFFIX="/ci-${{ steps.info.outputs.sha }}"
+        export KSU_VARIANT=${{ inputs.ksu }}
+        export DEFCONFIG_VARIANT=${{ inputs.variant }}
+        export VERSION_SUFFIX="-${{ inputs.version }}"
         
         chmod +x build.sh
         ./build.sh ak3 2>&1 | tee build.log
 
     - name: Prepare Files
       if: success()
-      run: |
-        ZIP_NAME=$(ls ZeroX-5.10*.zip | head -n 1)
-        NEW_NAME="ZeroX-5.10-${{ matrix.variant }}-${{ steps.info.outputs.today }}-${{ steps.info.outputs.sha }}.zip"
-        mv "$ZIP_NAME" "$NEW_NAME"
-        echo "final_name=$NEW_NAME" >> $GITHUB_ENV
+      run: .github/scripts/ci.sh prepare_artifact
+      env:
+        KSU_VARIANT: ${{ inputs.ksu }}
+        DEFCONFIG_VARIANT: ${{ inputs.variant }}
+        DATE: ${{ steps.info.outputs.today }}
+        SHA: ${{ steps.info.outputs.sha }}
+        VERSION: ${{ inputs.version }}
 
     - name: Upload Artifacts
       if: success()
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.final_name }}
+        name: ${{ env.artifact_name }}
         path: ${{ env.final_name }}
 
     - name: Notify Build Failure
       if: failure()
-      run: |
-        MSG=$(printf "*ZeroX Kernel Build Failed!* ❌\n\n*Variant*: \`${{ matrix.variant }}\` \n*Hash*: \`${{ steps.info.outputs.sha }}\`")
-        curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendDocument" \
-        -F "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-        -F "document=@build.log" \
-        -F "parse_mode=Markdown" \
-        -F "caption=$MSG"
+      run: .github/scripts/ci.sh notify_failure build
+      env:
+        TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        KSU_VARIANT: ${{ inputs.ksu }}
+        DEFCONFIG_VARIANT: ${{ inputs.variant }}
+        SHA: ${{ steps.info.outputs.sha }}
+        VERSION: ${{ inputs.version }}
 
   notify:
     needs: build
@@ -110,27 +110,7 @@ jobs:
           merge-multiple: true
 
       - name: Send Telegram Media Group
-        run: |
-          DATE="${{ needs.build.outputs.today }}"
-          SHA="${{ needs.build.outputs.sha }}"
-          
-          KSU_FILE=$(ls ./downloads/*.zip | grep "\-ksu-" | grep -v "next" | head -n 1)
-          NEXT_FILE=$(ls ./downloads/*.zip | grep "\-ksu-next-" | head -n 1)
-          NON_KSU_FILE=$(ls ./downloads/*.zip | grep "\-non-ksu-" | head -n 1)
-          
-          MSG=$(printf "*ZeroX Kernel Build Success!* ⚡️\n\n*Kernel*: \`${{ needs.build.outputs.kernel_ver }}\`\n*Date*: \`$DATE\`\n*Hash*: \`$SHA\`")
-          
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage" \
-          -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-          -d "parse_mode=Markdown" \
-          --data-urlencode "text=$MSG"
-
-          for file in "$KSU_FILE" "$NEXT_FILE" "$NON_KSU_FILE"; do
-            if [ -n "$file" ] && [ -f "$file" ]; then
-              echo "Uploading $(basename "$file")..."
-              curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendDocument" \
-              -F "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-              -F "document=@$file" \
-              -F "parse_mode=Markdown"
-            fi
-          done
+        run: .github/scripts/ci.sh notify_success build "${{ needs.build.outputs.kernel_ver }}" "${{ needs.build.outputs.today }}" "${{ needs.build.outputs.sha }}" "" "./downloads"
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

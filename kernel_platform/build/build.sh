@@ -825,7 +825,16 @@ fi
 # Custom Defconfig
     echo "========================================================"
     echo " Merging custom defconfig with .config"
-    (cd ${OUT_DIR} && ${MERGE_CONFIG} -m .config ${ANDROID_BUILD_TOP}/custom_defconfigs/zerox_defconfig)
+    if [ "${DEFCONFIG_VARIANT}" = "perf" ]; then
+      (cd ${OUT_DIR} && make O=${OUT_DIR} ${TOOL_ARGS} ${MERGE_CONFIG} -m .config ${ANDROID_BUILD_TOP}/custom_defconfigs/zerox-perf_defconfig)
+    elif [ "${DEFCONFIG_VARIANT}" = "batt" ]; then
+      (cd ${OUT_DIR} && make O=${OUT_DIR} ${TOOL_ARGS} ${MERGE_CONFIG} -m .config ${ANDROID_BUILD_TOP}/custom_defconfigs/zerox-batt_defconfig)
+    else 
+      echo "========================================================"
+      echo " Invalid variant: ${DEFCONFIG_VARIANT}"
+      echo "========================================================"
+      exit 1
+    fi
     (cd ${OUT_DIR} && make O=${OUT_DIR} ${TOOL_ARGS} olddefconfig)
 
 if [ "${LTO}" = "none" -o "${LTO}" = "thin" -o "${LTO}" = "full" ]; then

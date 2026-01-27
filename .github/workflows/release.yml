@@ -13,7 +13,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [ksu, ksu-next, non-ksu]
+        variant: [perf, batt]
+        ksu: [ksu, ksu-next, non-ksu]
     outputs:
       today: ${{ steps.info.outputs.today }}
       sha: ${{ steps.info.outputs.sha }}
@@ -30,30 +31,21 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Install Required Packages
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential bc bison flex libssl-dev make libncurses5-dev git curl clang lld libelf-dev erofs-utils unzip ccache
+      run: .github/scripts/ci.sh prepare_env
 
     - name: Setup ccache
       uses: actions/cache@v4
       with:
         path: .ccache
-        key: ${{ runner.os }}-ccache-${{ matrix.variant }}-${{ hashFiles('**/Makefile') }}-${{ github.run_id }}
+        key: ${{ runner.os }}-ccache-${{ matrix.ksu }}-${{ matrix.variant }}-${{ hashFiles('**/Makefile') }}-${{ github.run_id }}
         restore-keys: |
-          ${{ runner.os }}-ccache-${{ matrix.variant }}-${{ hashFiles('**/Makefile') }}-
-          ${{ runner.os }}-ccache-${{ matrix.variant }}-
+          ${{ runner.os }}-ccache-${{ matrix.ksu }}-${{ matrix.variant }}-${{ hashFiles('**/Makefile') }}-
+          ${{ runner.os }}-ccache-${{ matrix.ksu }}-${{ matrix.variant }}-
 
     - name: Apply Patches
-      run: |
-        git submodule update --init --recursive --remote
-        cd kernel_platform/common
-        if [ "${{ matrix.variant }}" = "ksu" ]; then
-          curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
-        elif [ "${{ matrix.variant }}" = "ksu-next" ]; then
-          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
-        fi
-        wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
-        sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/selinux/selinux,baseband_guard/ } }' security/Kconfig
+      run: .github/scripts/ci.sh setup_ksu
+      env:
+        KSU_VARIANT: ${{ matrix.ksu }}
 
     - name: Get Build Info
       id: info
@@ -67,39 +59,39 @@ jobs:
 
     - name: Kernel Build
       run: |
-        sudo timedatectl set-timezone "Asia/Seoul" || export TZ="Asia/Seoul"
-        export KBUILD_BUILD_USER="Yoro1836"
-        export KBUILD_BUILD_HOST="AkoTheCow"
-        export KBUILD_BUILD_TIMESTAMP=$(date)
-        export KSU_VARIANT=${{ matrix.variant }}
+        export KSU_VARIANT=${{ matrix.ksu }}
+        export DEFCONFIG_VARIANT=${{ matrix.variant }}
         export VERSION_SUFFIX="-${{ github.event.inputs.version }}"
         chmod +x build.sh
         ./build.sh ak3 2>&1 | tee build.log
 
     - name: Prepare Files
       if: success()
-      run: |
-        ZIP_NAME=$(ls ZeroX-5.10*.zip)
-        NEW_NAME="ZeroX-${{ github.event.inputs.version }}-${{ matrix.variant }}-${{ steps.info.outputs.today }}-${{ steps.info.outputs.sha }}.zip"
-        mv "$ZIP_NAME" "$NEW_NAME"
-        echo "final_name=$NEW_NAME" >> $GITHUB_ENV
+      run: .github/scripts/ci.sh prepare_artifact
+      env:
+        KSU_VARIANT: ${{ matrix.ksu }}
+        DEFCONFIG_VARIANT: ${{ matrix.variant }}
+        DATE: ${{ steps.info.outputs.today }}
+        SHA: ${{ steps.info.outputs.sha }}
+        VERSION: ${{ github.event.inputs.version }}
 
     - name: Upload Artifacts
       if: success()
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.final_name }}
+        name: ${{ env.artifact_name }}
         path: ${{ env.final_name }}
 
     - name: Notify Build Failure
       if: failure()
-      run: |
-        MSG=$(printf "*ZeroX Kernel Release Build Failed!* ❌\n\n*Version*: \`${{ github.event.inputs.version }}\`\n*Variant*: \`${{ matrix.variant }}\`\n*Hash*: \`${{ steps.info.outputs.sha }}\`")
-        curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendDocument" \
-        -F "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-        -F "document=@build.log" \
-        -F "caption=$MSG" \
-        -F "parse_mode=Markdown"
+      run: .github/scripts/ci.sh notify_failure release
+      env:
+        TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        KSU_VARIANT: ${{ matrix.ksu }}
+        DEFCONFIG_VARIANT: ${{ matrix.variant }}
+        SHA: ${{ steps.info.outputs.sha }}
+        VERSION: ${{ github.event.inputs.version }}
 
   release:
     needs: build
@@ -127,15 +119,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Send Telegram Message
-        run: |
-          VER="${{ github.event.inputs.version }}"
-          DATE="${{ needs.build.outputs.today }}"
-          SHA="${{ needs.build.outputs.sha }}"
-          REPO="${{ github.repository }}"
-          BASE="https://github.com/$REPO/releases/download/$VER"
-          
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage" \
-          -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-          -d "parse_mode=Markdown" \
-          -d "text=$(printf "*ZeroX Kernel Release Success!* 🚀\n\n*Version*: \`$VER\`\n*Kernel*: \`${{ needs.build.outputs.kernel_ver }}\`\n*Date*: \`$DATE\`\n*Hash*: \`$SHA\`")" \
-          -d "reply_markup={\"inline_keyboard\":[[{\"text\":\"KernelSU\",\"url\":\"$BASE/ZeroX-$VER-ksu-$DATE-$SHA.zip\"}],[{\"text\":\"KernelSU Next\",\"url\":\"$BASE/ZeroX-$VER-ksu-next-$DATE-$SHA.zip\"}],[{\"text\":\"Non-KSU\",\"url\":\"$BASE/ZeroX-$VER-non-ksu-$DATE-$SHA.zip\"}]]}"
+        run: .github/scripts/ci.sh notify_success release "${{ needs.build.outputs.kernel_ver }}" "${{ needs.build.outputs.today }}" "${{ needs.build.outputs.sha }}" "${{ github.event.inputs.version }}"
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GITHUB_REPOSITORY: ${{ github.repository }}

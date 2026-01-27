@@ -62,6 +62,12 @@ function setup_env() {
     export TARGET_PRODUCT=gki
     export TARGET_BOARD_PLATFORM=gki
     
+    # KBUILD Setting
+    sudo timedatectl set-timezone "Asia/Seoul" || export TZ="Asia/Seoul"
+    export KBUILD_BUILD_USER="Yoro1836"
+    export KBUILD_BUILD_HOST="AkoTheCow"
+    export KBUILD_BUILD_TIMESTAMP=$(date)
+
     # Kernel Version Customization
     export LOCALVERSION="$VERSION_SUFFIX"
 
@@ -146,6 +152,27 @@ function build_kernel() {
         # Uses direct build/build.sh call
         export GKI_KERNEL_BUILD_OPTIONS="${common_options} SKIP_VENDOR_BOOT=1"
         export BUILD_CONFIG=common/build.config.gki.aarch64
+        # Handle Custom Defconfig Variants
+        if [ -n "${DEFCONFIG_VARIANT}" ]; then
+            local variant_config="custom_defconfigs/zerox-${DEFCONFIG_VARIANT}_defconfig"
+            if [ -f "${variant_config}" ]; then
+                echo "Merging variant config: ${variant_config}"
+                export POST_DEFCONFIG_CMDS="check_defconfig && ${MERGE_CONFIG} \${OUT_DIR}/.config ${ANDROID_BUILD_TOP}/${variant_config}"
+            else
+                echo "Warning: variant config '${variant_config}' not found!"
+            fi
+        fi
+
+        # Source CI functions and setup KSU/Patches
+        if [ -f ".github/scripts/ci.sh" ]; then
+            source .github/scripts/ci.sh
+            # setup_ksu relies on KSU_VARIANT being set
+            setup_ksu
+            # setup_batt_features relies on DEFCONFIG_VARIANT being set to 'batt'
+            setup_batt_features
+        else
+            echo "Warning: .github/scripts/ci.sh not found, skipping patch application."
+        fi
         
         echo "Building Common Kernel..."
         (

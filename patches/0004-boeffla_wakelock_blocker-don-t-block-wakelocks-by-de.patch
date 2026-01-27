@@ -1,0 +1,26 @@
+From b2cb85a28c5767a6e420b151937b5169683aa7aa Mon Sep 17 00:00:00 2001
+From: flar2 <asegaert@gmail.com>
+Date: Tue, 13 Nov 2018 22:18:49 -0500
+Subject: [PATCH 4/4] boeffla_wakelock_blocker: don't block wakelocks by
+ default
+
+---
+ drivers/base/power/boeffla_wl_blocker.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/base/power/boeffla_wl_blocker.h b/drivers/base/power/boeffla_wl_blocker.h
+index 416eaa5ec4a5..1817f8c41623 100644
+--- a/drivers/base/power/boeffla_wl_blocker.h
++++ b/drivers/base/power/boeffla_wl_blocker.h
+@@ -16,7 +16,7 @@
+ 
+ #define BOEFFLA_WL_BLOCKER_VERSION	"1.1.0"
+ 
+-#define LIST_WL_DEFAULT				"qcom_rx_wakelock;wlan;wlan_wow_wl;wlan_extscan_wl;netmgr_wl;NETLINK"
++#define LIST_WL_DEFAULT				""
+ 
+ #define LENGTH_LIST_WL				255
+ #define LENGTH_LIST_WL_DEFAULT		100
+-- 
+2.51.0
+
