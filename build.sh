@@ -189,6 +189,7 @@ function build_kernel() {
         fi
         
         echo "Building Common Kernel..."
+        (
             cd kernel_platform
             env ${GKI_KERNEL_BUILD_OPTIONS} ./build/build.sh
         ) || { echo "Kernel build failed!"; exit 1; }
