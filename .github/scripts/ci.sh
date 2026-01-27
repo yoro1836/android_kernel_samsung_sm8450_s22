@@ -185,12 +185,14 @@ notify_failure() {
 # =========================================
 
 # Check if the function exists
-if declare -f "$1" > /dev/null; then
-    # call arguments verbatim
-    "$@"
-else
-    echo "Usage: $0 [function_name] [args...]"
-    echo "Available functions:"
-    declare -F | awk '{print $3}' | grep -v "^_"
-    exit 1
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    if declare -f "$1" > /dev/null; then
+        # call arguments verbatim
+        "$@"
+    else
+        echo "Usage: $0 [function_name] [args...]"
+        echo "Available functions:"
+        declare -F | awk '{print $3}' | grep -v "^_"
+        exit 1
+    fi
 fi
