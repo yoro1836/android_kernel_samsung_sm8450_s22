@@ -94,7 +94,11 @@ function setup_env() {
         export USE_CCACHE=1
         export CCACHE_EXEC=$(command -v ccache)
         export CCACHE_DIR="${ANDROID_BUILD_TOP}/.ccache"
+        export CCACHE_COMPILERCHECK=content
+        export CCACHE_COMPRESS=1
+        export CCACHE_MAXSIZE=10G
         mkdir -p "$CCACHE_DIR"
+        ccache -z # Zero stats at start
     else
         echo "ccache not found. Skipping..."
     fi
@@ -175,10 +179,14 @@ function build_kernel() {
         fi
         
         echo "Building Common Kernel..."
-        (
             cd kernel_platform
             env ${GKI_KERNEL_BUILD_OPTIONS} ./build/build.sh
         ) || { echo "Kernel build failed!"; exit 1; }
+        
+        if [ "$USE_CCACHE" = "1" ]; then
+            echo "ccache statistics:"
+            ccache -s
+        fi
         
     elif [ "$build_type" = "tar" ]; then
         # Odin Tar Build
@@ -197,6 +205,11 @@ function build_kernel() {
         ( 
             env ${GKI_KERNEL_BUILD_OPTIONS} ${ANDROID_BUILD_TOP}/kernel_platform/build/android/prepare_vendor.sh sec ${TARGET_PRODUCT} 
         ) || { echo "Vendor build failed!"; exit 1; }
+
+        if [ "$USE_CCACHE" = "1" ]; then
+            echo "ccache statistics:"
+            ccache -s
+        fi
     fi
 }
 
