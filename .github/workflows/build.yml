@@ -44,10 +44,11 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .ccache
-        key: ${{ runner.os }}-ccache-${{ inputs.ksu }}-${{ inputs.variant }}-${{ hashFiles('**/Makefile') }}-${{ github.run_id }}
+        key: ${{ runner.os }}-ccache-${{ inputs.ksu }}-${{ inputs.variant }}-${{ hashFiles('**/Makefile') }}
         restore-keys: |
-          ${{ runner.os }}-ccache-${{ inputs.ksu }}-${{ inputs.variant }}-${{ hashFiles('**/Makefile') }}-
+          ${{ runner.os }}-ccache-${{ inputs.ksu }}-${{ inputs.variant }}-${{ hashFiles('**/Makefile') }}
           ${{ runner.os }}-ccache-${{ inputs.ksu }}-${{ inputs.variant }}-
+
 
     - name: Get Build Info
       id: info
