@@ -39,11 +39,9 @@ set -e
 function setup_env() {
     echo "Setting up environment..."
     
-    # Check submodules
-    if [ ! -d "external/Anykernel3" ] || [ ! -d "./kernel_platform/common" ]; then
-        echo "Cloning submodules..."
-        git submodule update --init --recursive
-    fi
+    # Update submodules to latest
+    echo "Updating submodules..."
+    git submodule update --init --recursive --remote
 
     # DIR Setting
     SCRIPT_DIR="$(dirname $(readlink -fq $0))"
