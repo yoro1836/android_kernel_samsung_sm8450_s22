@@ -59,37 +59,7 @@ setup_ksu() {
     popd > /dev/null
 }
 
-setup_batt_features() {
-    if [ "$DEFCONFIG_VARIANT" != "batt" ]; then
-        return
-    fi
-    
-    log "Setting up Battery-saving features for 'batt' variant..."
-    
-    # Patches are located in the root 'patches' directory
-    local PATCH_DIR="$(pwd)/patches"
-    
-    if [ ! -d "$PATCH_DIR" ]; then
-        error "Patches directory not found at $PATCH_DIR"
-    fi
 
-    pushd kernel_platform/common > /dev/null
-    
-    log "Applying Boeffla Wakelock Blocker patches..."
-    # Apply patches
-    for patch in "$PATCH_DIR"/000[1-4]-*.patch; do
-        if [ -f "$patch" ]; then
-            log "Applying $(basename "$patch")..."
-            git apply --verbose "$patch" || {
-                error "Failed to apply $patch"
-            }
-        fi
-    done
-    
-    popd > /dev/null
-    
-    log "Battery features setup complete."
-}
 
 # Artifact Handling
 prepare_artifact() {

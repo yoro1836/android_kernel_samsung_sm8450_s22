@@ -180,8 +180,6 @@ function build_kernel() {
             source .github/scripts/ci.sh
             # setup_ksu relies on KSU_VARIANT being set
             setup_ksu
-            # setup_batt_features relies on DEFCONFIG_VARIANT being set to 'batt'
-            setup_batt_features
         else
             echo "Warning: .github/scripts/ci.sh not found, skipping patch application."
         fi
