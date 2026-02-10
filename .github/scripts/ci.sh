@@ -49,15 +49,7 @@ setup_ksu() {
 
     pushd kernel_platform/common
     
-    curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/dev-susfs/kernel/setup.sh" | bash -s dev-susfs
-
-    log "Applying SUSFS4KSU Patches (Thanks @linastorvaldz)..."
-    git clone --depth=1 -q https://gitlab.com/simonpunk/susfs4ksu -b $SUSFS_BRANCH $SUSFS_DIR
-    cp -R $SUSFS_PATCHES/fs/* ./fs
-    cp -R $SUSFS_PATCHES/include/* ./include
-    patch -p1 < $SUSFS_PATCHES/50_add_susfs_in_${SUSFS_BRANCH}.patch || true
-    patch -p1 < $KERNEL_PATCHES/pershoot-susfs-k5.10.patch
-
+    curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
 
     log "Applying Baseband Guard..."
     wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
