@@ -49,7 +49,7 @@ setup_ksu() {
 
     pushd kernel_platform/common
     
-    curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/dev-susfs/kernel/setup.sh" | bash -s dev-susfs
+    curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
 
     log "Applying Baseband Guard..."
     wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
