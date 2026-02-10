@@ -120,11 +120,10 @@ function prepare_toolchain() {
         --pagesize 4096
     "
 
-    # Import Custom LLVM toolchain
-    local TOOLCHAIN_URL="https://www.kernel.org/pub/tools/llvm/files/llvm-22.1.0-rc2-x86_64.tar.gz"
+    # Import Samsung toolchain
+    local TOOLCHAIN_URL="https://github.com/yoro1836/samsung_sm8450_toolchain/releases/download/clang12/toolchain.tar.gz"
     local TOOLCHAIN_FILE=$(basename "$TOOLCHAIN_URL")
-    local TOOLCHAIN_DIR="llvm-22.1.0-rc2-x86_64"
-    local CHECK_DIR="kernel_platform/prebuilts/${TOOLCHAIN_DIR}"
+    local CHECK_DIR="kernel_platform/prebuilts"
 
     if [ -d "$CHECK_DIR" ]; then
         echo "Directory '$CHECK_DIR' already exists. Skipping download toolchain."
@@ -133,16 +132,7 @@ function prepare_toolchain() {
         if [ ! -f "$TOOLCHAIN_FILE" ]; then
             wget -q --show-progress --progress=dot:giga -O "$TOOLCHAIN_FILE" "$TOOLCHAIN_URL"
         fi
-        
-        # Create directory and extract
-        mkdir -p "$CHECK_DIR"
-        # The tarball usually contains a top-level directory, but let's strip it to be safe and consistent
-        # Inspecting the tarball structure would be ideal, but for now we'll assume standard layout or strip-components if needed.
-        # Most kernel.org llvm tarballs have a top folder like llvm-project-..., checking...
-        # Actually kernel.org llvm binaries usually extract to ./
-        # Let's try extracting directly to the target dir.
-        
-        tar -xzf "$TOOLCHAIN_FILE" -C "$CHECK_DIR" --strip-components=1 && rm "$TOOLCHAIN_FILE"
+        tar -xzf "$TOOLCHAIN_FILE" -C kernel_platform && rm "$TOOLCHAIN_FILE"
         echo "Complete Download."
     fi
 }
