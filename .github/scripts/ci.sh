@@ -49,7 +49,7 @@ setup_ksu() {
 
     pushd kernel_platform/common
     
-    curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/kernel/setup.sh" | bash -s $SUSFS_BRANCH
+    curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/dev-susfs/kernel/setup.sh" | bash -s $SUSFS_BRANCH
 
     log "Applying SUSFS4KSU Patches (Thanks @linastorvaldz)..."
     git clone --depth=1 -q https://gitlab.com/simonpunk/susfs4ksu -b $SUSFS_BRANCH $SUSFS_DIR
