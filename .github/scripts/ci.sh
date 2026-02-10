@@ -40,22 +40,33 @@ prepare_env() {
 # Patches & Setup
 setup_ksu() {
     # Expects KSU_VARIANT to be set
-    log "Applying KernelSU variant: ${KSU_VARIANT}"
-    
+    log "Applying KernelSU Patches..."
+
+    local SUSFS_BRANCH="gki-android12-5.10"
+    local SUSFS_DIR="$GITHUB_WORKSPACE/susfs4ksu"
+    local SUSFS_PATCHES="$GITHUB_WORKSPACE/patches/susfs"
+    local KERNEL_PATCHES="$GITHUB_WORKSPACE/patches"
+
     pushd kernel_platform/common
     
-    if [ "${KSU_VARIANT}" = "ksu" ]; then
-        curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
-    elif [ "${KSU_VARIANT}" = "ksu-next" ]; then
-        curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
-    else
-        log "No KernelSU setup needed for ${KSU_VARIANT}"
-    fi
+    curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/kernel/setup.sh" | bash -s $SUSFS_BRANCH
+
+    log "Applying SUSFS4KSU Patches (Thanks @linastorvaldz)..."
+    git clone --depth=1 -q https://gitlab.com/simonpunk/susfs4ksu -b $SUSFS_BRANCH $SUSFS_DIR
+    cp -R $SUSFS_PATCHES/fs/* ./fs
+    cp -R $SUSFS_PATCHES/include/* ./include
+    patch -p1 < $SUSFS_PATCHES/50_add_susfs_in_${SUSFS_BRANCH}.patch || true
+    patch -p1 < $KERNEL_PATCHES/pershoot-susfs-k5.10.patch
+
 
     log "Applying Baseband Guard..."
     wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
     sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/selinux/selinux,baseband_guard/ } }' security/Kconfig
     
+    log "Applying More Managers Support(Thanks @linastorvaldz)..."
+    cd KernelSU-Next
+    patch -p1 < $KERNEL_PATCHES/ksun-add-more-managers-support.patch
+
     popd > /dev/null
 }
 
@@ -63,7 +74,7 @@ setup_ksu() {
 
 # Artifact Handling
 prepare_artifact() {
-    # Expects KSU_VARIANT, DEFCONFIG_VARIANT, DATE, SHA to be set
+    # Expects DEFCONFIG_VARIANT, DATE, SHA to be set
     log "Preparing artifact..."
     
     local zip_file=$(ls ZeroX-5.10*.zip 2>/dev/null | head -n 1)
@@ -75,8 +86,8 @@ prepare_artifact() {
     # Determine Version (Input or Default)
     local ver="${VERSION:-5.10}"
     
-    # Format: ZeroX-[Version]-[KSU]-[Variant]-[Date]-[Hash].zip
-    local new_base="ZeroX-${ver}-${KSU_VARIANT}-${DEFCONFIG_VARIANT}-${DATE}-${SHA}"
+    # Format: ZeroX-[Version]-[Variant]-[Date]-[Hash].zip
+    local new_base="ZeroX-${ver}-${DEFCONFIG_VARIANT}-${DATE}-${SHA}"
     local new_name="${new_base}.zip"
 
     log "Renaming $zip_file to $new_name"
@@ -156,9 +167,9 @@ notify_failure() {
     local msg
     
     if [ -n "$VERSION" ]; then
-        msg=$(printf "*ZeroX Kernel ${type^} Failed!* ❌\n\n*Version*: \`${VERSION}\`\n*KSU*: \`${KSU_VARIANT}\`\n*Variant*: \`${DEFCONFIG_VARIANT}\`\n*Hash*: \`${SHA}\`")
+        msg=$(printf "*ZeroX Kernel ${type^} Failed!* ❌\n\n*Version*: \`${VERSION}\`\n*Variant*: \`${DEFCONFIG_VARIANT}\`\n*Hash*: \`${SHA}\`")
     else
-        msg=$(printf "*ZeroX Kernel ${type^} Failed!* ❌\n\n*KSU*: \`${KSU_VARIANT}\`\n*Variant*: \`${DEFCONFIG_VARIANT}\` \n*Hash*: \`${SHA}\`")
+        msg=$(printf "*ZeroX Kernel ${type^} Failed!* ❌\n\n*Variant*: \`${DEFCONFIG_VARIANT}\` \n*Hash*: \`${SHA}\`")
     fi
     
     if [ -f "build.log" ]; then

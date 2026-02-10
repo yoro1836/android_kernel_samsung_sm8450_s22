@@ -14,7 +14,6 @@ jobs:
       fail-fast: false
       matrix:
         variant: [perf, batt]
-        ksu: [ksu, ksu-next, non-ksu]
     
     steps:
     - name: Free up workflow space
@@ -35,10 +34,10 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .ccache
-        key: ${{ runner.os }}-ccache-${{ matrix.ksu }}-${{ matrix.variant }}-${{ hashFiles('**/Makefile') }}-${{ github.run_id }}
+        key: ${{ runner.os }}-ccache-${{ matrix.variant }}-${{ hashFiles('**/Makefile') }}-${{ github.run_id }}
         restore-keys: |
-          ${{ runner.os }}-ccache-${{ matrix.ksu }}-${{ matrix.variant }}-${{ hashFiles('**/Makefile') }}-
-          ${{ runner.os }}-ccache-${{ matrix.ksu }}-${{ matrix.variant }}-
+          ${{ runner.os }}-ccache-${{ matrix.variant }}-${{ hashFiles('**/Makefile') }}-
+          ${{ runner.os }}-ccache-${{ matrix.variant }}-
 
     - name: Apply Patches
       run: .github/scripts/ci.sh setup_ksu
@@ -57,7 +56,7 @@ jobs:
 
     - name: Kernel Build
       run: |
-        export KSU_VARIANT=${{ matrix.ksu }}
+
         export DEFCONFIG_VARIANT=${{ matrix.variant }}
         export VERSION_SUFFIX="-${{ github.event.inputs.version }}"
         chmod +x build.sh
@@ -66,8 +65,8 @@ jobs:
     - name: Prepare Files
       if: success()
       run: .github/scripts/ci.sh prepare_artifact
+
       env:
-        KSU_VARIANT: ${{ matrix.ksu }}
         DEFCONFIG_VARIANT: ${{ matrix.variant }}
         DATE: ${{ steps.info.outputs.today }}
         SHA: ${{ steps.info.outputs.sha }}
@@ -86,7 +85,7 @@ jobs:
       env:
         TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        KSU_VARIANT: ${{ matrix.ksu }}
+
         DEFCONFIG_VARIANT: ${{ matrix.variant }}
         SHA: ${{ steps.info.outputs.sha }}
         VERSION: ${{ github.event.inputs.version }}

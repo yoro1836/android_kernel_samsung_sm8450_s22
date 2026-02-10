@@ -11,15 +11,7 @@ on:
         options:
           - "perf"
           - "batt"
-      ksu:
-        description: "KernelSU Variant"
-        required: true
-        default: "ksu"
-        type: choice
-        options:
-          - "ksu"
-          - "ksu-next"
-          - "non-ksu"
+
 
 jobs:
   build:
@@ -44,10 +36,10 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .ccache
-        key: ${{ runner.os }}-ccache-${{ inputs.ksu }}-${{ inputs.variant }}-${{ hashFiles('**/Makefile') }}
+        key: ${{ runner.os }}-ccache-${{ inputs.variant }}-${{ hashFiles('**/Makefile') }}
         restore-keys: |
-          ${{ runner.os }}-ccache-${{ inputs.ksu }}-${{ inputs.variant }}-${{ hashFiles('**/Makefile') }}
-          ${{ runner.os }}-ccache-${{ inputs.ksu }}-${{ inputs.variant }}-
+          ${{ runner.os }}-ccache-${{ inputs.variant }}-${{ hashFiles('**/Makefile') }}
+          ${{ runner.os }}-ccache-${{ inputs.variant }}-
 
 
     - name: Get Build Info
@@ -62,7 +54,7 @@ jobs:
 
     - name: Kernel Build
       run: |
-        export KSU_VARIANT=${{ inputs.ksu }}
+
         export DEFCONFIG_VARIANT=${{ inputs.variant }}
         export VERSION_SUFFIX="/ci-${{ steps.info.outputs.sha }}"
         
@@ -73,7 +65,7 @@ jobs:
       if: success()
       run: .github/scripts/ci.sh prepare_artifact
       env:
-        KSU_VARIANT: ${{ inputs.ksu }}
+
         DEFCONFIG_VARIANT: ${{ inputs.variant }}
         DATE: ${{ steps.info.outputs.today }}
         SHA: ${{ steps.info.outputs.sha }}
@@ -92,7 +84,7 @@ jobs:
       env:
         TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        KSU_VARIANT: ${{ inputs.ksu }}
+
         DEFCONFIG_VARIANT: ${{ inputs.variant }}
         SHA: ${{ steps.info.outputs.sha }}
         VERSION: ${{ inputs.version }}
