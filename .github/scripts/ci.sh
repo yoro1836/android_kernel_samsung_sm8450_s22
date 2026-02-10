@@ -41,10 +41,6 @@ prepare_env() {
 setup_ksu() {
     # Expects KSU_VARIANT to be set
     log "Applying KernelSU Patches..."
-
-    local SUSFS_BRANCH="gki-android12-5.10"
-    local SUSFS_DIR="$GITHUB_WORKSPACE/susfs4ksu"
-    local SUSFS_PATCHES="${SUSFS_DIR}/kernel_patches"
     local KERNEL_PATCHES="$GITHUB_WORKSPACE/patches"
 
     pushd kernel_platform/common
@@ -55,7 +51,7 @@ setup_ksu() {
     wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
     sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/selinux/selinux,baseband_guard/ } }' security/Kconfig
     
-    log "Applying More Managers Support(Thanks @linastorvaldz)..."
+    log "Applying More Managers Support(Thanks @pershoot)..."
     cd KernelSU-Next
     patch -p1 < $KERNEL_PATCHES/ksun-add-more-managers-support.patch
 
