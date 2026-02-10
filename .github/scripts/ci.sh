@@ -44,7 +44,7 @@ setup_ksu() {
 
     local SUSFS_BRANCH="gki-android12-5.10"
     local SUSFS_DIR="$GITHUB_WORKSPACE/susfs4ksu"
-    local SUSFS_PATCHES="$GITHUB_WORKSPACE/patches/susfs"
+    local SUSFS_PATCHES="${SUSFS_DIR}/kernel_patches"
     local KERNEL_PATCHES="$GITHUB_WORKSPACE/patches"
 
     pushd kernel_platform/common
