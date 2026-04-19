@@ -164,6 +164,10 @@ function build_kernel() {
         # Uses direct build/build.sh call
         export GKI_KERNEL_BUILD_OPTIONS="${common_options} SKIP_VENDOR_BOOT=1"
         # Handle Custom Defconfig Variants
+        if [ -z "${DEFCONFIG_VARIANT}" ]; then
+            export DEFCONFIG_VARIANT="perf"
+        fi
+
         if [ -n "${DEFCONFIG_VARIANT}" ]; then
             local variant_config="custom_defconfigs/zerox-${DEFCONFIG_VARIANT}_defconfig"
             if [ -f "${variant_config}" ]; then

@@ -41,7 +41,7 @@ prepare_env() {
 setup_ksu() {
     # Expects KSU_VARIANT to be set
     log "Applying KernelSU Patches..."
-    local KERNEL_PATCHES="$GITHUB_WORKSPACE/patches"
+    local KERNEL_PATCHES="${GITHUB_WORKSPACE:-$(pwd)}/patches"
 
     pushd kernel_platform/common
     
