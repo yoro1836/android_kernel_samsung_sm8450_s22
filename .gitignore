@@ -5,3 +5,5 @@ exports.txt
 kernel_platform/prebuilts*
 out/
 .vscode
+.ccache
+kernel_platform/.config
