@@ -163,13 +163,12 @@ function build_kernel() {
         # GKI Build for AnyKernel3
         # Uses direct build/build.sh call
         export GKI_KERNEL_BUILD_OPTIONS="${common_options} SKIP_VENDOR_BOOT=1"
-        export BUILD_CONFIG=common/build.config.gki.aarch64
         # Handle Custom Defconfig Variants
         if [ -n "${DEFCONFIG_VARIANT}" ]; then
             local variant_config="custom_defconfigs/zerox-${DEFCONFIG_VARIANT}_defconfig"
             if [ -f "${variant_config}" ]; then
                 echo "Merging variant config: ${variant_config}"
-                export POST_DEFCONFIG_CMDS="check_defconfig && ${MERGE_CONFIG} \${OUT_DIR}/.config ${ANDROID_BUILD_TOP}/${variant_config}"
+                export POST_DEFCONFIG_CMDS="check_defconfig && ${MERGE_CONFIG} -m \${OUT_DIR}/.config ${ANDROID_BUILD_TOP}/${variant_config}"
             else
                 echo "Warning: variant config '${variant_config}' not found!"
             fi
@@ -185,10 +184,15 @@ function build_kernel() {
         fi
         
         echo "Building Common Kernel..."
-        (
-            cd kernel_platform
-            env ${GKI_KERNEL_BUILD_OPTIONS} ./build/build.sh
-        ) || { echo "Kernel build failed!"; exit 1; }
+        #(
+        #    cd kernel_platform
+        #    env ${GKI_KERNEL_BUILD_OPTIONS} ./build/build.sh
+        #) || { echo "Kernel build failed!"; exit 1; }
+
+        ( 
+            env ${GKI_KERNEL_BUILD_OPTIONS} ${ANDROID_BUILD_TOP}/kernel_platform/build/android/prepare_vendor.sh sec ${TARGET_PRODUCT} 
+        ) || { echo "Vendor build failed!"; exit 1; }
+
         
         if [ "$USE_CCACHE" = "1" ]; then
             echo "ccache statistics:"
@@ -201,12 +205,7 @@ function build_kernel() {
         export GKI_KERNEL_BUILD_OPTIONS="${common_options} \
             BUILD_BOOT_IMG=1 \
             MKBOOTIMG_PATH=${ANDROID_BUILD_TOP}/kernel_platform/tools/mkbootimg/mkbootimg.py \
-            BOOT_IMAGE_HEADER_VERSION=4 \
-            AVB_SIGN_BOOT_IMG=1 \
-            AVB_BOOT_PARTITION_SIZE=100663296 \
-            AVB_BOOT_KEY=${ANDROID_BUILD_TOP}/kernel_platform/tools/mkbootimg/gki/testdata/testkey_rsa4096.pem \
-            AVB_BOOT_ALGORITHM=SHA256_RSA4096 \
-            AVB_BOOT_PARTITION_NAME=boot"
+            BOOT_IMAGE_HEADER_VERSION=4"
             
         echo "Building Kernel & Vendor Modules..."
         ( 
