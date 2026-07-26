@@ -34,11 +34,11 @@ index 942386d76b..5f6b205d37 100644
  ccflags-y += -Wno-declaration-after-statement -Wno-unused-function -Wno-unused-variable
 diff --git a/kernel/apk_sign.c b/kernel/apk_sign.c
 index 3f2ae2d472..0cc1f3fc19 100644
---- a/kernel/apk_sign.c
-+++ b/kernel/apk_sign.c
-@@ -360,5 +360,26 @@ bool is_manager_apk(char *path)
- 		return false;
- 	}
+--- a/kernel/manaerapk_sign.c
++++ b/kernel/manager/apk_sign.c
+@@ -362,5 +362,26 @@ if (strncmp(pkg, KSU_MANAGER_PACKAGE, sizeof(KSU_MANAGER_PACKAGE))) {
+		return false;
+	}
  #endif
 -	return check_v2_signature(path, EXPECTED_MANAGER_SIZE, EXPECTED_MANAGER_HASH);
 +
