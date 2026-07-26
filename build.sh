@@ -85,31 +85,6 @@ function setup_env() {
         ../vendor/qcom/opensource/audio-kernel \
         ../vendor/qcom/opensource/camera-kernel \
         ../vendor/qcom/opensource/display-drivers/msm"
-
-    # CCACHE Setting
-    if command -v ccache >/dev/null 2>&1; then
-        echo "ccache found! Enabling..."
-        export USE_CCACHE=1
-        export CCACHE_EXEC=$(command -v ccache)
-        export CCACHE_DIR="${ANDROID_BUILD_TOP}/.ccache"
-        export CCACHE_COMPILERCHECK=content
-        export CCACHE_COMPRESS=1
-        export CCACHE_MAXSIZE=10G
-        export CCACHE_BASEDIR="${ANDROID_BUILD_TOP}"
-        mkdir -p "$CCACHE_DIR"
-        ccache -z # Zero stats at start
-
-        # Masquerade clang/gcc to force ccache usage
-        local CACHED_BIN_DIR="${ANDROID_BUILD_TOP}/.ccache/bin"
-        mkdir -p "$CACHED_BIN_DIR"
-        for tool in clang clang++ gcc g++ cc c++; do
-            ln -sf "$CCACHE_EXEC" "${CACHED_BIN_DIR}/${tool}"
-        done
-        export PATH="${CACHED_BIN_DIR}:${PATH}"
-        echo "CCache masquerading enabled in ${CACHED_BIN_DIR}"
-    else
-        echo "ccache not found. Skipping..."
-    fi
 }
 
 function prepare_toolchain() {
@@ -196,12 +171,6 @@ function build_kernel() {
         ( 
             env ${GKI_KERNEL_BUILD_OPTIONS} ${ANDROID_BUILD_TOP}/kernel_platform/build/android/prepare_vendor.sh sec ${TARGET_PRODUCT} 
         ) || { echo "Vendor build failed!"; exit 1; }
-
-        
-        if [ "$USE_CCACHE" = "1" ]; then
-            echo "ccache statistics:"
-            ccache -s
-        fi
         
     elif [ "$build_type" = "tar" ]; then
         # Odin Tar Build
@@ -216,10 +185,6 @@ function build_kernel() {
             env ${GKI_KERNEL_BUILD_OPTIONS} ${ANDROID_BUILD_TOP}/kernel_platform/build/android/prepare_vendor.sh sec ${TARGET_PRODUCT} 
         ) || { echo "Vendor build failed!"; exit 1; }
 
-        if [ "$USE_CCACHE" = "1" ]; then
-            echo "ccache statistics:"
-            ccache -s
-        fi
     fi
 }
 

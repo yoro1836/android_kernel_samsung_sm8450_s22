@@ -30,15 +30,6 @@ jobs:
     - name: Install Required Packages
       run: .github/scripts/ci.sh prepare_env
 
-    - name: Setup ccache
-      uses: actions/cache@v4
-      with:
-        path: .ccache
-        key: ${{ runner.os }}-ccache-${{ matrix.variant }}-${{ hashFiles('**/Makefile') }}-${{ github.run_id }}
-        restore-keys: |
-          ${{ runner.os }}-ccache-${{ matrix.variant }}-${{ hashFiles('**/Makefile') }}-
-          ${{ runner.os }}-ccache-${{ matrix.variant }}-
-
     - name: Apply Patches
       run: .github/scripts/ci.sh setup_ksu
       env:

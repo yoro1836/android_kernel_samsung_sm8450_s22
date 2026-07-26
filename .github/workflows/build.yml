@@ -32,16 +32,6 @@ jobs:
     - name: Install Required Packages
       run: .github/scripts/ci.sh prepare_env
 
-    - name: Setup ccache
-      uses: actions/cache@v4
-      with:
-        path: .ccache
-        key: ${{ runner.os }}-ccache-${{ inputs.variant }}-${{ hashFiles('**/Makefile') }}
-        restore-keys: |
-          ${{ runner.os }}-ccache-${{ inputs.variant }}-${{ hashFiles('**/Makefile') }}
-          ${{ runner.os }}-ccache-${{ inputs.variant }}-
-
-
     - name: Get Build Info
       id: info
       run: |
