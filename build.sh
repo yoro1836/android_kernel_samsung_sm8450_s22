@@ -115,6 +115,24 @@ function prepare_toolchain() {
         mv "${PREBUILT_CLANG_ROOT}/${LLVM_DIR}" "${CLANG_DIR}"
         echo "Complete Download."
     fi
+
+    # Wire system build tools into the prebuilt layout the GKI build expects
+    local PREBUILTS_ROOT="kernel_platform/prebuilts"
+    mkdir -p "${PREBUILTS_ROOT}/build-tools/linux-x86/bin" "${PREBUILTS_ROOT}/build-tools/common" "${PREBUILTS_ROOT}/gas/linux-x86"
+    for tool in kernel_platform/build/build-tools/path/linux-x86/*; do
+        local tool_name; tool_name=$(basename "${tool}")
+        local sys_tool; sys_tool=$(command -v "${tool_name}" 2>/dev/null) || continue
+        case "${sys_tool}" in
+            /*) ln -sf "${sys_tool}" "${PREBUILTS_ROOT}/build-tools/linux-x86/bin/${tool_name}" ;;
+        esac
+    done
+    if [ -d /usr/share/bison ]; then
+        ln -sfn /usr/share/bison "${PREBUILTS_ROOT}/build-tools/common/bison"
+    fi
+    for bin in /usr/bin/aarch64-linux-gnu-*; do
+        [ -e "${bin}" ] || continue
+        ln -sf "${bin}" "${PREBUILTS_ROOT}/gas/linux-x86/$(basename "${bin}")"
+    done
 }
 
 # -----------------------------------------------------------------------------
