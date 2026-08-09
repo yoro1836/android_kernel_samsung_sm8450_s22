@@ -101,8 +101,7 @@ function prepare_toolchain() {
     local TOOLCHAIN_FILE=$(basename "$TOOLCHAIN_URL")
     local PREBUILT_CLANG_ROOT="kernel_platform/prebuilts-master/clang/host/linux-x86"
     local CLANG_DIR="${PREBUILT_CLANG_ROOT}/clang-r416183b"
-    local LLVM_DIR="llvm-${TOOLCHAIN_FILE#llvm-}"
-    LLVM_DIR="${LLVM_DIR%-*}"
+    local LLVM_DIR="${TOOLCHAIN_FILE%.tar.*}"
 
     if [ -d "${CLANG_DIR}" ]; then
         echo "Toolchain '${CLANG_DIR}' already exists. Skipping download toolchain."
