@@ -59,6 +59,8 @@ apply_patches() {
     log "Applying all patches from patches/ ..."
     local KERNEL_PATCHES="${GITHUB_WORKSPACE:-$(pwd)}/patches"
     local KERNEL_DIR="$(pwd)/kernel_platform/common"
+    # Match the local flow (setup_env) so the ABI check passes against latest
+    git submodule update --init --recursive --remote
 
     for patch in "${KERNEL_PATCHES}"/*.patch; do
         [ -e "$patch" ] || continue
