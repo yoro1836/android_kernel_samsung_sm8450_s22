@@ -14,6 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         variant: [perf, batt]
+        droidspaces: [false, true]
     
     steps:
     - name: Free up workflow space
@@ -35,6 +36,7 @@ jobs:
       env:
         KSU_VARIANT: ${{ matrix.ksu }}
 
+
     - name: Get Build Info
       id: info
       run: |
@@ -49,6 +51,7 @@ jobs:
       run: |
 
         export DEFCONFIG_VARIANT=${{ matrix.variant }}
+        export DROIDSPACES=${{ matrix.droidspaces && '1' || '0' }}
         export VERSION_SUFFIX="-${{ github.event.inputs.version }}"
         chmod +x build.sh
         ./build.sh ak3 2>&1 | tee build.log
@@ -62,6 +65,7 @@ jobs:
         DATE: ${{ steps.info.outputs.today }}
         SHA: ${{ steps.info.outputs.sha }}
         VERSION: ${{ github.event.inputs.version }}
+        DROIDSPACES: ${{ matrix.droidspaces && '1' || '0' }}
 
     - name: Upload Artifacts
       if: success()
@@ -80,13 +84,14 @@ jobs:
         DEFCONFIG_VARIANT: ${{ matrix.variant }}
         SHA: ${{ steps.info.outputs.sha }}
         VERSION: ${{ github.event.inputs.version }}
+        DROIDSPACES: ${{ matrix.droidspaces && '1' || '0' }}
 
     - name: Create Release
       if: success()
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ github.event.inputs.version }}
-        name: "ZeroX Kernel ${{ github.event.inputs.version }}"
+        tag_name: "${{ github.event.inputs.version }}-${{ matrix.variant }}${{ matrix.droidspaces && '-droidspaces' || '' }}"
+        name: "ZeroX Kernel ${{ github.event.inputs.version }} (${{ matrix.variant }}${{ matrix.droidspaces && ' droidspaces' || '' }})"
         body: |
           ZeroX Kernel Release ${{ github.event.inputs.version }}
           - Date: ${{ steps.info.outputs.today }}

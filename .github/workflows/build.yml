@@ -11,6 +11,11 @@ on:
         options:
           - "perf"
           - "batt"
+      droidspaces:
+        description: "Include DroidSpaces config"
+        required: false
+        default: false
+        type: boolean
 
 
 jobs:
@@ -46,6 +51,7 @@ jobs:
       run: |
 
         export DEFCONFIG_VARIANT=${{ inputs.variant }}
+        export DROIDSPACES=${{ inputs.droidspaces && '1' || '0' }}
         export VERSION_SUFFIX="/ci-${{ steps.info.outputs.sha }}"
         
         chmod +x build.sh
@@ -60,6 +66,7 @@ jobs:
         DATE: ${{ steps.info.outputs.today }}
         SHA: ${{ steps.info.outputs.sha }}
         VERSION: ${{ inputs.version }}
+        DROIDSPACES: ${{ inputs.droidspaces && '1' || '0' }}
 
     - name: Upload Artifacts
       if: success()
@@ -78,6 +85,7 @@ jobs:
         DEFCONFIG_VARIANT: ${{ inputs.variant }}
         SHA: ${{ steps.info.outputs.sha }}
         VERSION: ${{ inputs.version }}
+        DROIDSPACES: ${{ inputs.droidspaces && '1' || '0' }}
 
     - name: Notify Build Success
       if: success()
@@ -85,3 +93,4 @@ jobs:
       env:
         TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        DROIDSPACES: ${{ inputs.droidspaces && '1' || '0' }}

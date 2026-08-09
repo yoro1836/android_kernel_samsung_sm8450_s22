@@ -75,7 +75,11 @@ prepare_artifact() {
     local ver="${VERSION:-5.10}"
     
     # Format: ZeroX-[Version]-[Variant]-[Date]-[Hash].zip
-    local new_base="ZeroX-${ver}-${DEFCONFIG_VARIANT}-${DATE}-${SHA}"
+    local variant_label="${DEFCONFIG_VARIANT}"
+    if [ "${DROIDSPACES}" = "1" ]; then
+        variant_label="${variant_label}-droidspaces"
+    fi
+    local new_base="ZeroX-${ver}-${variant_label}-${DATE}-${SHA}"
     local new_name="${new_base}.zip"
 
     log "Renaming $zip_file to $new_name"
@@ -154,10 +158,15 @@ notify_failure() {
     local type="$1"
     local msg
     
+    local variant_label="${DEFCONFIG_VARIANT}"
+    if [ "${DROIDSPACES}" = "1" ]; then
+        variant_label="${variant_label}-droidspaces"
+    fi
+
     if [ -n "$VERSION" ]; then
-        msg=$(printf "*ZeroX Kernel ${type^} Failed!* ❌\n\n*Version*: \`${VERSION}\`\n*Variant*: \`${DEFCONFIG_VARIANT}\`\n*Hash*: \`${SHA}\`")
+        msg=$(printf "*ZeroX Kernel ${type^} Failed!* ❌\n\n*Version*: \`${VERSION}\`\n*Variant*: \`${variant_label}\`\n*Hash*: \`${SHA}\`")
     else
-        msg=$(printf "*ZeroX Kernel ${type^} Failed!* ❌\n\n*Variant*: \`${DEFCONFIG_VARIANT}\` \n*Hash*: \`${SHA}\`")
+        msg=$(printf "*ZeroX Kernel ${type^} Failed!* ❌\n\n*Variant*: \`${variant_label}\` \n*Hash*: \`${SHA}\`")
     fi
     
     if [ -f "build.log" ]; then

@@ -827,7 +827,11 @@ fi
     echo " Merging custom defconfig with .config"
     variant_config="${ANDROID_BUILD_TOP}/custom_defconfigs/zerox-${DEFCONFIG_VARIANT}_defconfig"
     if [ -f "${variant_config}" ]; then
-      (cd ${OUT_DIR} && ${MERGE_CONFIG} -m .config ${ANDROID_BUILD_TOP}/custom_defconfigs/zerox-common_defconfig ${variant_config})
+      merge_fragments="${ANDROID_BUILD_TOP}/custom_defconfigs/zerox-common_defconfig ${variant_config}"
+      if [ "${DROIDSPACES}" = "1" ]; then
+        merge_fragments="${merge_fragments} ${ANDROID_BUILD_TOP}/custom_defconfigs/zerox-droidspaces_defconfig"
+      fi
+      (cd ${OUT_DIR} && ${MERGE_CONFIG} -m .config ${merge_fragments})
     else
       echo "========================================================"
       echo " Invalid variant: ${DEFCONFIG_VARIANT}"
