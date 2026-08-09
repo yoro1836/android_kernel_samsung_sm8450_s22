@@ -95,19 +95,24 @@ function prepare_toolchain() {
         --pagesize 4096
     "
 
-    # Import Samsung toolchain
-    local TOOLCHAIN_URL="https://github.com/yoro1836/samsung_sm8450_toolchain/releases/download/clang12/toolchain.tar.gz"
+    # Import toolchain
+    local TOOLCHAIN_URL="https://www.kernel.org/pub/tools/llvm/files/llvm-22.1.8-x86_64.tar.gz"
     local TOOLCHAIN_FILE=$(basename "$TOOLCHAIN_URL")
-    local CHECK_DIR="kernel_platform/prebuilts"
+    local PREBUILT_CLANG_ROOT="kernel_platform/prebuilts-master/clang/host/linux-x86"
+    local CLANG_DIR="${PREBUILT_CLANG_ROOT}/clang-r416183b"
+    local LLVM_DIR="llvm-${TOOLCHAIN_FILE#llvm-}"
+    LLVM_DIR="${LLVM_DIR%-*}"
 
-    if [ -d "$CHECK_DIR" ]; then
-        echo "Directory '$CHECK_DIR' already exists. Skipping download toolchain."
+    if [ -d "${CLANG_DIR}" ]; then
+        echo "Toolchain '${CLANG_DIR}' already exists. Skipping download toolchain."
     else
-        echo "Directory '$CHECK_DIR' not found. Starting download toolchain..."
-        if [ ! -f "$TOOLCHAIN_FILE" ]; then
-            wget -q --show-progress --progress=dot:giga -O "$TOOLCHAIN_FILE" "$TOOLCHAIN_URL"
+        echo "Toolchain '${CLANG_DIR}' not found. Starting download toolchain..."
+        if [ ! -f "${TOOLCHAIN_FILE}" ]; then
+            wget -q --show-progress --progress=dot:giga -O "${TOOLCHAIN_FILE}" "${TOOLCHAIN_URL}"
         fi
-        tar -xzf "$TOOLCHAIN_FILE" -C kernel_platform && rm "$TOOLCHAIN_FILE"
+        mkdir -p "${PREBUILT_CLANG_ROOT}"
+        tar -xzf "${TOOLCHAIN_FILE}" -C "${PREBUILT_CLANG_ROOT}" && rm "${TOOLCHAIN_FILE}"
+        mv "${PREBUILT_CLANG_ROOT}/${LLVM_DIR}" "${CLANG_DIR}"
         echo "Complete Download."
     fi
 }
