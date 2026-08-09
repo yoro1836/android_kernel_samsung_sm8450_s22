@@ -41,7 +41,6 @@ prepare_env() {
 setup_ksu() {
     # Expects KSU_VARIANT to be set
     log "Applying KernelSU Patches..."
-    local KERNEL_PATCHES="${GITHUB_WORKSPACE:-$(pwd)}/patches"
 
     pushd kernel_platform/common
     
@@ -51,11 +50,32 @@ setup_ksu() {
     wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
     sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/selinux/selinux,baseband_guard/ } }' security/Kconfig
     
-    log "Applying More Managers Support(Thanks @pershoot)..."
-    cd KernelSU-Next
-    patch -p1 < $KERNEL_PATCHES/ksun-add-more-managers-support.patch
 
     popd > /dev/null
+}
+
+# Apply every patch in the patches/ directory
+apply_patches() {
+    log "Applying all patches from patches/ ..."
+    local KERNEL_PATCHES="${GITHUB_WORKSPACE:-$(pwd)}/patches"
+    local KERNEL_DIR="$(pwd)/kernel_platform/common"
+
+    for patch in "${KERNEL_PATCHES}"/*.patch; do
+        [ -e "$patch" ] || continue
+        local name; name=$(basename "$patch")
+        case "$name" in
+            ksun-*)
+                # Applied inside the KernelSU-Next source tree
+                log "Applying ${name} (KernelSU-Next)..."
+                (cd "${KERNEL_DIR}/KernelSU-Next" && patch -p1 < "$patch") || error "Patch failed: ${name}"
+                ;;
+            *)
+                # Applied against the kernel tree root
+                log "Applying ${name} ..."
+                (cd "${KERNEL_DIR}" && patch -p1 < "$patch") || error "Patch failed: ${name}"
+                ;;
+        esac
+    done
 }
 
 

@@ -157,11 +157,15 @@ function build_kernel() {
             fi
         fi
 
-        # Source CI functions and setup KSU/Patches
-        if [ -f ".github/scripts/ci.sh" ]; then
+        # Source CI functions and setup KSU/Patches (CI runs these as separate steps)
+        if [ "${SKIP_PATCH_SETUP}" = "1" ]; then
+            echo "Skipping KSU/patches setup (SKIP_PATCH_SETUP=1)."
+        elif [ -f ".github/scripts/ci.sh" ]; then
             source .github/scripts/ci.sh
             # setup_ksu relies on KSU_VARIANT being set
             setup_ksu
+            # Apply all patches from patches/ (ksun patch needs KernelSU-Next from setup_ksu)
+            apply_patches
         else
             echo "Warning: .github/scripts/ci.sh not found, skipping patch application."
         fi

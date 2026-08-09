@@ -47,6 +47,12 @@ jobs:
         SUBLEVEL=$(grep "^SUBLEVEL =" kernel_platform/common/Makefile | awk '{print $3}')
         echo "kernel_ver=$VERSION.$PATCHLEVEL.$SUBLEVEL" >> $GITHUB_OUTPUT
 
+    - name: Setup KernelSU & Baseband
+      run: .github/scripts/ci.sh setup_ksu
+
+    - name: Apply Patches
+      run: .github/scripts/ci.sh apply_patches
+
     - name: Kernel Build
       run: |
 
@@ -56,6 +62,8 @@ jobs:
         
         chmod +x build.sh
         ./build.sh ak3 2>&1 | tee build.log
+      env:
+        SKIP_PATCH_SETUP: '1'
 
     - name: Prepare Files
       if: success()

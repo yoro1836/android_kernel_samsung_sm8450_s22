@@ -31,10 +31,14 @@ jobs:
     - name: Install Required Packages
       run: .github/scripts/ci.sh prepare_env
 
-    - name: Apply Patches
+    - name: Setup KernelSU & Baseband
       run: .github/scripts/ci.sh setup_ksu
       env:
         KSU_VARIANT: ${{ matrix.ksu }}
+
+    - name: Apply Patches
+      run: .github/scripts/ci.sh apply_patches
+
 
 
     - name: Get Build Info
@@ -55,6 +59,8 @@ jobs:
         export VERSION_SUFFIX="-${{ github.event.inputs.version }}"
         chmod +x build.sh
         ./build.sh ak3 2>&1 | tee build.log
+      env:
+        SKIP_PATCH_SETUP: '1'
 
     - name: Prepare Files
       if: success()
