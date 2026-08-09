@@ -133,6 +133,15 @@ function prepare_toolchain() {
         [ -e "${bin}" ] || continue
         ln -sf "${bin}" "${PREBUILTS_ROOT}/gas/linux-x86/$(basename "${bin}")"
     done
+    # Host tools (dtc etc.) link with --rtlib=compiler-rt; the slim kernel.org
+    # toolchain ships sanitizer libs but no libclang_rt.builtins.a
+    local RT_SRC; RT_SRC=$(find /usr/lib -name "libclang_rt.builtins-x86_64.a" 2>/dev/null | head -n1)
+    if [ -n "${RT_SRC}" ]; then
+        local RT_DEST; RT_DEST=$(find "${CLANG_DIR}/lib/clang" -type d -name "x86_64-unknown-linux-gnu" 2>/dev/null | head -n1)
+        if [ -n "${RT_DEST}" ]; then
+            ln -sf "${RT_SRC}" "${RT_DEST}/libclang_rt.builtins.a"
+        fi
+    fi
 }
 
 # -----------------------------------------------------------------------------

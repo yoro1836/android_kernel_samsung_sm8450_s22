@@ -34,7 +34,7 @@ prepare_env() {
 
     log "Installing dependencies..."
     sudo apt-get update
-    sudo apt-get install -y build-essential bc bison flex libssl-dev make libncurses5-dev git curl clang lld libelf-dev erofs-utils unzip device-tree-compiler m4 binutils-aarch64-linux-gnu
+    sudo apt-get install -y build-essential bc bison flex libssl-dev make libncurses5-dev git curl clang lld libelf-dev erofs-utils unzip device-tree-compiler m4 binutils-aarch64-linux-gnu libclang-rt-18-dev
 }
 
 # Patches & Setup
