@@ -825,11 +825,10 @@ fi
 # Custom Defconfig
     echo "========================================================"
     echo " Merging custom defconfig with .config"
-    if [ "${DEFCONFIG_VARIANT}" = "perf" ]; then
-      (cd ${OUT_DIR} && ${MERGE_CONFIG} -m .config ${ANDROID_BUILD_TOP}/custom_defconfigs/zerox-perf_defconfig)
-    elif [ "${DEFCONFIG_VARIANT}" = "batt" ]; then
-      (cd ${OUT_DIR} && ${MERGE_CONFIG} -m .config ${ANDROID_BUILD_TOP}/custom_defconfigs/zerox-batt_defconfig)
-    else 
+    variant_config="${ANDROID_BUILD_TOP}/custom_defconfigs/zerox-${DEFCONFIG_VARIANT}_defconfig"
+    if [ -f "${variant_config}" ]; then
+      (cd ${OUT_DIR} && ${MERGE_CONFIG} -m .config ${ANDROID_BUILD_TOP}/custom_defconfigs/zerox-common_defconfig ${variant_config})
+    else
       echo "========================================================"
       echo " Invalid variant: ${DEFCONFIG_VARIANT}"
       echo "========================================================"

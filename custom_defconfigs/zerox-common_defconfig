@@ -1,0 +1,50 @@
+# ZeroX common custom config
+
+# Disable Scamsung anti-root protection
+# CONFIG_UH is not set
+# CONFIG_RKP is not set
+# CONFIG_KDP is not set
+# CONFIG_SECURITY_DEFEX is not set
+# CONFIG_PROCA is not set
+# CONFIG_FIVE is not set
+
+# Disable Werror
+# CONFIG_WERROR is not set
+
+# LOCALVERSION_AUTO off (version string is set per-variant)
+# CONFIG_LOCALVERSION_AUTO is not set
+
+# LLVM
+CONFIG_LLVM_POLLY=y
+
+# FileSystem
+CONFIG_TMPFS_XATTR=y
+
+# Governor
+CONFIG_CPU_FREQ_GOV_USERSPACE=y
+CONFIG_CPU_FREQ_GOV_ONDEMAND=y
+CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
+
+# BBG
+CONFIG_BBG=y
+
+# MGLRU
+CONFIG_LRU_GEN=y
+CONFIG_LRU_GEN_ENABLED=y
+
+# TCP
+CONFIG_TCP_CONG_ADVANCED=y
+# CONFIG_TCP_CONG_BIC is not set
+# CONFIG_TCP_CONG_WESTWOOD is not set
+# CONFIG_TCP_CONG_HTCP is not set
+CONFIG_TCP_CONG_BBR=y
+CONFIG_DEFAULT_BBR=y
+CONFIG_DEFAULT_TCP_CONG="bbr"
+
+# Power
+CONFIG_WQ_POWER_EFFICIENT_DEFAULT=y
+
+# Custom Toolchain
+# CONFIG_CFI_CLANG is not set
+# CONFIG_CFI_CLANG_SHADOW is not set
+# CONFIG_RELR is not set

@@ -147,7 +147,7 @@ function build_kernel() {
             local variant_config="custom_defconfigs/zerox-${DEFCONFIG_VARIANT}_defconfig"
             if [ -f "${variant_config}" ]; then
                 echo "Merging variant config: ${variant_config}"
-                export POST_DEFCONFIG_CMDS="check_defconfig && ${MERGE_CONFIG} -m \${OUT_DIR}/.config ${ANDROID_BUILD_TOP}/${variant_config}"
+                export POST_DEFCONFIG_CMDS="check_defconfig && ${MERGE_CONFIG} -m \${OUT_DIR}/.config ${ANDROID_BUILD_TOP}/custom_defconfigs/zerox-common_defconfig ${ANDROID_BUILD_TOP}/${variant_config}"
             else
                 echo "Warning: variant config '${variant_config}' not found!"
             fi
