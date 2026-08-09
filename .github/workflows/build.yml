@@ -61,6 +61,7 @@ jobs:
         export VERSION_SUFFIX="/ci-${{ steps.info.outputs.sha }}"
         
         chmod +x build.sh
+        set -o pipefail
         ./build.sh ak3 2>&1 | tee build.log
       env:
         SKIP_PATCH_SETUP: '1'

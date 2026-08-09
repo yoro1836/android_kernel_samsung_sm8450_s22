@@ -39,9 +39,10 @@ set -e
 function setup_env() {
     echo "Setting up environment..."
     
-    # Update submodules to latest
-    echo "Updating submodules..."
-    git submodule update --init --recursive --remote
+    if [ "${SKIP_PATCH_SETUP}" != "1" ]; then
+        echo "Updating submodules..."
+        git submodule update --init --recursive --remote
+    fi
 
     # DIR Setting
     SCRIPT_DIR="$(dirname $(readlink -fq $0))"
